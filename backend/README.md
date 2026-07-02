@@ -39,16 +39,16 @@ Legend — **Auth**: 🔒 requires login · 🌐 public (private content filtere
 ### Users & social graph — `routes/users.js`  (Owner: Member A)
 | Method | URL | Auth | Body | Response |
 |---|---|---|---|---|
-| GET | `/api/users/:username` | ⚪ | — | TODO (profile + follower/following/post counts + isFollowedByMe) |
-| GET | `/api/users/:username/posts` | ⚪ | — | TODO |
-| PUT | `/api/users/me` | 🔒 | TODO (displayName, bio, isPrivate) | TODO |
-| GET | `/api/users/:username/followers` | ⚪ | — | TODO |
-| GET | `/api/users/:username/following` | ⚪ | — | TODO |
-| POST | `/api/users/:username/follow` | 🔒 | — | TODO (→ accepted for public, pending for private) |
-| DELETE | `/api/users/:username/follow` | 🔒 | — | TODO (unfollow / cancel request) |
-| GET | `/api/follow-requests` | 🔒 | — | TODO (incoming pending) |
-| PUT | `/api/follow-requests/:id/accept` | 🔒 | — | TODO |
-| PUT | `/api/follow-requests/:id/reject` | 🔒 | — | TODO |
+| GET | `/api/users/:username` | ⚪ | — | `{ user, counts:{followers,following,posts}, isMe, followStatus }` where `followStatus` ∈ `accepted`\|`pending`\|`null`. 404 if unknown. |
+| GET | `/api/users/:username/posts` | ⚪ | — | `{ posts:[…] }` top-level posts, newest first; private authors gated (owner/accepted follower only). 404 if unknown. |
+| PUT | `/api/users/me` | 🔒 | `{ displayName?, bio?, isPrivate? }` (≥1 field) | `{ user }`. Setting `isPrivate:false` auto-accepts pending requests. 400 if empty/invalid. |
+| GET | `/api/users/:username/followers` | ⚪ | — | `{ users:[…] }` accepted followers. 404 if unknown. |
+| GET | `/api/users/:username/following` | ⚪ | — | `{ users:[…] }` accepted follows. 404 if unknown. |
+| POST | `/api/users/:username/follow` | 🔒 | — | 201 `{ status }` — `accepted` (public) or `pending` (private); emits `follow`/`follow_request` notification. Idempotent. 400 self-follow, 404 unknown. |
+| DELETE | `/api/users/:username/follow` | 🔒 | — | 204 — unfollow or cancel a pending request (idempotent). 404 unknown. |
+| GET | `/api/follow-requests` | 🔒 | — | `{ requests:[{…user, requestedAt}] }` — incoming pending, newest first. |
+| PUT | `/api/follow-requests/:id/accept` | 🔒 | — | `{ status:"accepted" }`; `:id` = requester's user id; notifies them (`follow`). 404 if no pending request. |
+| PUT | `/api/follow-requests/:id/reject` | 🔒 | — | `{ status:"rejected" }`; removes the pending row. 404 if no pending request. |
 
 ### Posts, feed, media, bookmarks — `routes/posts.js`, `routes/feed.js`, `routes/media.js`  (Owner: Member B)
 | Method | URL | Auth | Body | Response |

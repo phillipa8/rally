@@ -12,6 +12,8 @@ import SqliteStoreFactory from 'better-sqlite3-session-store';
 
 import db from './db/db.js';
 import authRouter from './routes/auth.js';
+import usersRouter from './routes/users.js';
+import followRequestsRouter from './routes/followRequests.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -59,9 +61,9 @@ app.get('/api/health', (_req, res) =>
   res.json({ status: 'ok', service: 'rally-api', time: new Date().toISOString() })
 );
 app.use('/api/auth', authRouter);
+app.use('/api/users', usersRouter);            // A
+app.use('/api/follow-requests', followRequestsRouter); // A
 // TODO (feature tracks):
-//   app.use('/api/users', usersRouter);          // A
-//   app.use('/api/follow-requests', ...);        // A
 //   app.use('/api/notifications', ...);          // A
 //   app.use('/api/trending', ...);               // A
 //   app.use('/api/posts', postsRouter);          // B (+ likes/reposts/replies from D)
