@@ -14,6 +14,7 @@ import db from './db/db.js';
 import authRouter from './routes/auth.js';
 import usersRouter from './routes/users.js';
 import followRequestsRouter from './routes/followRequests.js';
+import notificationsRouter from './routes/notifications.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -63,8 +64,8 @@ app.get('/api/health', (_req, res) =>
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);            // A
 app.use('/api/follow-requests', followRequestsRouter); // A
+app.use('/api/notifications', notificationsRouter);    // A
 // TODO (feature tracks):
-//   app.use('/api/notifications', ...);          // A
 //   app.use('/api/trending', ...);               // A
 //   app.use('/api/posts', postsRouter);          // B (+ likes/reposts/replies from D)
 //   app.use('/api/feed', feedRouter);            // B
