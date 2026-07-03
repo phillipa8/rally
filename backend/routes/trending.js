@@ -36,4 +36,60 @@ router.get('/posts', optionalAuth, (req, res) => {
   res.json({ posts: rows.map((r) => ({ ...r, score: r.likes + r.reposts })) });
 });
 
+// GET /api/trending/events  — events gaining traction in the last 24h,
+// scored by new participants (going/interested) + posts sharing the event.
+// participantCount is the running total; score is the 24h movement only.
+router.get('/events', optionalAuth, (_req, res) => {
+  const rows = db
+    .prepare(
+      `SELECT * FROM (
+         SELECT e.id, e.title, e.description, e.location,
+                e.start_time AS startTime, e.end_time AS endTime, e.created_at AS createdAt,
+                c.slug AS categorySlug, c.name AS categoryName,
+                u.username AS creatorUsername, u.display_name AS creatorDisplayName,
+                (SELECT COUNT(*) FROM event_participants ep
+                   WHERE ep.event_id = e.id AND ep.status IN ('going','interested')) AS participantCount,
+                (SELECT COUNT(*) FROM event_participants ep
+                   WHERE ep.event_id = e.id AND ep.status IN ('going','interested')
+                     AND ep.created_at >= datetime('now','-1 day')) AS newParticipants,
+                (SELECT COUNT(*) FROM posts p
+                   WHERE p.event_id = e.id AND p.created_at >= datetime('now','-1 day')) AS shares
+           FROM events e
+           JOIN categories c ON c.id = e.category_id
+           JOIN users u ON u.id = e.creator_id
+       )
+       WHERE (newParticipants + shares) > 0
+       ORDER BY (newParticipants + shares) DESC, startTime ASC
+       LIMIT 20`
+    )
+    .all();
+
+  res.json({ events: rows.map((r) => ({ ...r, score: r.newParticipants + r.shares })) });
+});
+
+// GET /api/trending/categories  — the 6 fixed categories ranked by last-24h
+// activity. Categories attach to EVENTS, so a category's activity = new events
+// + posts sharing those events + new participants, all within 24h. The full set
+// is returned (ordered) so the client can render a "trending categories" bar.
+router.get('/categories', optionalAuth, (_req, res) => {
+  const rows = db
+    .prepare(
+      `SELECT c.id, c.slug, c.name,
+              (SELECT COUNT(*) FROM events e
+                 WHERE e.category_id = c.id AND e.created_at >= datetime('now','-1 day')) AS newEvents,
+              (SELECT COUNT(*) FROM posts p JOIN events e ON e.id = p.event_id
+                 WHERE e.category_id = c.id AND p.created_at >= datetime('now','-1 day')) AS shares,
+              (SELECT COUNT(*) FROM event_participants ep JOIN events e ON e.id = ep.event_id
+                 WHERE e.category_id = c.id AND ep.status IN ('going','interested')
+                   AND ep.created_at >= datetime('now','-1 day')) AS newParticipants
+         FROM categories c
+        ORDER BY (newEvents + shares + newParticipants) DESC, c.name ASC`
+    )
+    .all();
+
+  res.json({
+    categories: rows.map((r) => ({ ...r, score: r.newEvents + r.shares + r.newParticipants })),
+  });
+});
+
 export default router;
