@@ -50,4 +50,32 @@ router.get('/', requireAuth, (req, res) => {
   res.json({ notifications: rows.map(toNotification) });
 });
 
+// GET /api/notifications/unread-count  — badge count of unread notifications.
+router.get('/unread-count', requireAuth, (req, res) => {
+  const { n } = db
+    .prepare('SELECT COUNT(*) AS n FROM notifications WHERE recipient_id = ? AND is_read = 0')
+    .get(req.userId);
+  res.json({ count: n });
+});
+
+// PUT /api/notifications/:id/read  — mark a single notification read.
+// The recipient_id guard means you can only mark your OWN notifications;
+// a valid id belonging to someone else returns 404, not 403 (no existence leak).
+router.put('/:id/read', requireAuth, (req, res) => {
+  const info = db
+    .prepare('UPDATE notifications SET is_read = 1 WHERE id = ? AND recipient_id = ?')
+    .run(Number(req.params.id), req.userId);
+  if (info.changes === 0) return res.status(404).json({ error: 'Notification not found' });
+  res.json({ id: Number(req.params.id), isRead: true });
+});
+
+// PUT /api/notifications/read-all  — mark every unread notification read.
+// Returns how many rows were updated so the client can clear its badge.
+router.put('/read-all', requireAuth, (req, res) => {
+  const info = db
+    .prepare('UPDATE notifications SET is_read = 1 WHERE recipient_id = ? AND is_read = 0')
+    .run(req.userId);
+  res.json({ updated: info.changes });
+});
+
 export default router;
