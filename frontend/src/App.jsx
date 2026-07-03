@@ -9,6 +9,7 @@ import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
 import NotificationsPage from './pages/NotificationsPage';
 import TrendingPage from './pages/TrendingPage';
+import SettingsPage from './pages/SettingsPage';
 import PlaceholderPage from './pages/PlaceholderPage';
 import NotFoundPage from './pages/NotFoundPage';
 
@@ -64,6 +65,14 @@ export default function App() {
             />
             {/* Public profiles keyed by username (private posts gated server-side) */}
             <Route path="u/:username" element={<ProfilePage />} />
+            <Route
+              path="settings"
+              element={
+                <ProtectedRoute>
+                  <SettingsPage />
+                </ProtectedRoute>
+              }
+            />
 
             <Route path="*" element={<NotFoundPage />} />
           </Route>
