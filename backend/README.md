@@ -94,10 +94,10 @@ Legend — **Auth**: 🔒 requires login · 🌐 public (private content filtere
 ### Notifications & trending — `routes/notifications.js`, `routes/trending.js`  (Owner: Member A)
 | Method | URL | Auth | Body | Response |
 |---|---|---|---|---|
-| GET | `/api/notifications` | 🔒 | — | TODO |
-| GET | `/api/notifications/unread-count` | 🔒 | — | TODO |
-| PUT | `/api/notifications/:id/read` | 🔒 | — | TODO |
-| PUT | `/api/notifications/read-all` | 🔒 | — | TODO |
+| GET | `/api/notifications` | 🔒 | — | `{ notifications:[{ id, type, isRead, createdAt, postId, eventId, actor }] }` — own notifications, newest first (latest 50); `actor` null for system rows. |
+| GET | `/api/notifications/unread-count` | 🔒 | — | `{ count }` — number of unread notifications (badge). |
+| PUT | `/api/notifications/:id/read` | 🔒 | — | `{ id, isRead:true }`. Own rows only; 404 if not found/not yours. |
+| PUT | `/api/notifications/read-all` | 🔒 | — | `{ updated }` — count of rows marked read. |
 | GET | `/api/trending/posts` | 🌐 | — | TODO (last 24h) |
 | GET | `/api/trending/events` | 🌐 | — | TODO (last 24h) |
 | GET | `/api/trending/categories` | 🌐 | — | TODO (last 24h) |
