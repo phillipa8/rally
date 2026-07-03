@@ -98,9 +98,9 @@ Legend — **Auth**: 🔒 requires login · 🌐 public (private content filtere
 | GET | `/api/notifications/unread-count` | 🔒 | — | `{ count }` — number of unread notifications (badge). |
 | PUT | `/api/notifications/:id/read` | 🔒 | — | `{ id, isRead:true }`. Own rows only; 404 if not found/not yours. |
 | PUT | `/api/notifications/read-all` | 🔒 | — | `{ updated }` — count of rows marked read. |
-| GET | `/api/trending/posts` | 🌐 | — | TODO (last 24h) |
-| GET | `/api/trending/events` | 🌐 | — | TODO (last 24h) |
-| GET | `/api/trending/categories` | 🌐 | — | TODO (last 24h) |
+| GET | `/api/trending/posts` | 🌐 | — | `{ posts:[{…post, likes, reposts, score}] }` — top-level posts by (likes+reposts) in last 24h, visibility-gated, top 20. |
+| GET | `/api/trending/events` | 🌐 | — | `{ events:[{…event, categoryName, participantCount, newParticipants, shares, score}] }` — by 24h participants+shares, top 20. |
+| GET | `/api/trending/categories` | 🌐 | — | `{ categories:[{ id, slug, name, newEvents, shares, newParticipants, score }] }` — all 6, ranked by 24h activity. |
 
 ### System
 | Method | URL | Auth | Body | Response |
