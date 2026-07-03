@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ProfilePage from './pages/ProfilePage';
 import PlaceholderPage from './pages/PlaceholderPage';
 import NotFoundPage from './pages/NotFoundPage';
 
@@ -55,10 +56,12 @@ export default function App() {
               path="profile"
               element={
                 <ProtectedRoute>
-                  <PlaceholderPage title="Profile" />
+                  <ProfilePage />
                 </ProtectedRoute>
               }
             />
+            {/* Public profiles keyed by username (private posts gated server-side) */}
+            <Route path="u/:username" element={<ProfilePage />} />
 
             <Route path="*" element={<NotFoundPage />} />
           </Route>
