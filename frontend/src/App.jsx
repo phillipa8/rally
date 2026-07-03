@@ -8,6 +8,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
 import NotificationsPage from './pages/NotificationsPage';
+import TrendingPage from './pages/TrendingPage';
 import PlaceholderPage from './pages/PlaceholderPage';
 import NotFoundPage from './pages/NotFoundPage';
 
@@ -34,7 +35,7 @@ export default function App() {
             <Route path="explore" element={<PlaceholderPage title="Explore" />} />
             <Route path="calendar" element={<PlaceholderPage title="Calendar" />} />
             <Route path="search" element={<PlaceholderPage title="Search" />} />
-            <Route path="trending" element={<PlaceholderPage title="Trending" />} />
+            <Route path="trending" element={<TrendingPage />} />
 
             {/* Protected pages */}
             <Route
