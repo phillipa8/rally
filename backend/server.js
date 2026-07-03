@@ -15,6 +15,7 @@ import authRouter from './routes/auth.js';
 import usersRouter from './routes/users.js';
 import followRequestsRouter from './routes/followRequests.js';
 import notificationsRouter from './routes/notifications.js';
+import trendingRouter from './routes/trending.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -65,8 +66,8 @@ app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);            // A
 app.use('/api/follow-requests', followRequestsRouter); // A
 app.use('/api/notifications', notificationsRouter);    // A
+app.use('/api/trending', trendingRouter);              // A
 // TODO (feature tracks):
-//   app.use('/api/trending', ...);               // A
 //   app.use('/api/posts', postsRouter);          // B (+ likes/reposts/replies from D)
 //   app.use('/api/feed', feedRouter);            // B
 //   app.use('/api/media', mediaRouter);          // B
