@@ -216,3 +216,50 @@ a:hover { text-decoration: underline; }
   .sidebar__link { flex-direction: column; gap: 0.1rem; padding: 0.35rem 0.5rem; font-size: 0.65rem; }
   .sidebar__icon { font-size: 1.25rem; }
 }
+
+/* ---------- Profile (Member A) ---------- */
+.profile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  box-shadow: var(--shadow);
+}
+.profile__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.profile__identity { margin-top: 0.75rem; }
+.profile__name { margin: 0; font-size: 1.4rem; display: flex; align-items: center; }
+.profile__lock { font-size: 1rem; }
+.profile__handle { margin: 0.1rem 0 0; color: var(--muted); }
+.profile__bio { margin: 0.75rem 0 0; }
+.profile__stats { display: flex; gap: 1.5rem; margin: 1rem 0 0; padding: 0; }
+.stat { display: flex; gap: 0.4rem; align-items: baseline; margin: 0; }
+.stat__label { margin: 0; color: var(--muted); font-size: 0.9rem; }
+.stat__value { margin: 0; font-weight: 700; }
+.stat--button {
+  background: none; border: none; cursor: pointer; font: inherit; padding: 0;
+  border-radius: var(--radius);
+}
+.stat--button:hover .stat__label { color: var(--brand); }
+
+.profile__posts { display: flex; flex-direction: column; gap: 0.75rem; }
+.post-preview {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+}
+.post-preview__content { margin: 0; white-space: pre-wrap; }
+.post-preview__time { display: block; margin-top: 0.4rem; color: var(--muted); font-size: 0.8rem; }
+
+/* ---------- User card / list (Member A) ---------- */
+.user-list { display: flex; flex-direction: column; gap: 0.25rem; }
+.user-card { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.25rem; }
+.user-card__main { display: flex; align-items: center; gap: 0.75rem; flex: 1; color: var(--text); min-width: 0; }
+.user-card__main:hover { text-decoration: none; }
+.user-card__names { display: flex; flex-direction: column; min-width: 0; }
+.user-card__display { font-weight: 600; }
+.user-card__handle { color: var(--muted); font-size: 0.85rem; }
+.user-card__bio {
+  color: var(--muted); font-size: 0.85rem; margin-top: 0.15rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
