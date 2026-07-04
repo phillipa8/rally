@@ -7,6 +7,7 @@ import db from '../db/db.js';
 import { validate } from '../middleware/validate.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { visiblePostsWhere } from '../lib/visibility.js';
+import { postColumns, mapPost } from '../lib/postQuery.js';
 
 const router = Router();
 
@@ -113,18 +114,18 @@ router.get('/:username/posts', optionalAuth, (req, res) => {
   if (!author) return res.status(404).json({ error: 'User not found' });
 
   const v = visiblePostsWhere(req.userId);
+  const { columns, viewerParams } = postColumns(req.userId);
   const rows = db
     .prepare(
-      `SELECT p.id, p.content, p.event_id AS eventId, p.media_url AS mediaUrl, p.created_at AS createdAt,
-              u.username, u.display_name AS displayName, u.avatar_url AS avatarUrl
+      `SELECT ${columns}
          FROM posts p
          JOIN users u ON u.id = p.author_id
         WHERE p.author_id = ? AND p.parent_post_id IS NULL AND ${v.clause}
         ORDER BY p.created_at DESC, p.id DESC`
     )
-    .all(author.id, ...v.params);
+    .all(...viewerParams, author.id, ...v.params);
 
-  res.json({ posts: rows });
+  res.json({ posts: rows.map(mapPost) });
 });
 
 // GET /api/users/:username/followers  — accepted followers of this user.

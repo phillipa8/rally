@@ -3,7 +3,6 @@
 // Fetches the profile + that user's posts; private accounts you can't see show a
 // locked notice instead of posts. (PostCard from track B will later replace the
 // inline post preview below.)
-import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -13,6 +12,7 @@ import FollowListModal from '../components/FollowListModal';
 import LoadingState from '../components/LoadingState';
 import ErrorState from '../components/ErrorState';
 import EmptyState from '../components/EmptyState';
+import PostList from '../components/PostList';
 
 export default function ProfilePage() {
   const { username } = useParams();
@@ -49,21 +49,15 @@ export default function ProfilePage() {
             title="This account is private"
             hint="Follow this account to see their posts."
           />
-        ) : posts.loading ? (
-          <LoadingState label="Loading posts…" />
-        ) : posts.error ? (
-          <ErrorState message={posts.error} onRetry={posts.refetch} />
-        ) : !posts.data?.posts?.length ? (
-          <EmptyState title="No posts yet" />
         ) : (
-          posts.data.posts.map((p) => (
-            <article key={p.id} className="post-preview">
-              <p className="post-preview__content">{p.content}</p>
-              <time className="post-preview__time" dateTime={p.createdAt}>
-                {dayjs(p.createdAt).format('MMM D, YYYY')}
-              </time>
-            </article>
-          ))
+          <PostList
+            posts={posts.data?.posts}
+            loading={posts.loading}
+            error={posts.error}
+            onRetry={posts.refetch}
+            onChange={posts.refetch}
+            emptyTitle="No posts yet"
+          />
         )}
       </div>
     </section>

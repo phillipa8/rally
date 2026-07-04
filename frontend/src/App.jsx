@@ -3,7 +3,10 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import AppLayout from './components/AppLayout';
 import ProtectedRoute from './components/ProtectedRoute';
-import HomePage from './pages/HomePage';
+import HomeFeedPage from './pages/HomeFeedPage';
+import ExplorePage from './pages/ExplorePage';
+import BookmarksPage from './pages/BookmarksPage';
+import PostDetailPage from './pages/PostDetailPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
@@ -28,12 +31,12 @@ export default function App() {
               index
               element={
                 <ProtectedRoute>
-                  <HomePage />
+                  <HomeFeedPage />
                 </ProtectedRoute>
               }
             />
-            {/* Public discovery pages (feature tracks fill these in) */}
-            <Route path="explore" element={<PlaceholderPage title="Explore" />} />
+            {/* Public discovery pages */}
+            <Route path="explore" element={<ExplorePage />} />
             <Route path="calendar" element={<PlaceholderPage title="Calendar" />} />
             <Route path="search" element={<PlaceholderPage title="Search" />} />
             <Route path="trending" element={<TrendingPage />} />
@@ -51,7 +54,7 @@ export default function App() {
               path="bookmarks"
               element={
                 <ProtectedRoute>
-                  <PlaceholderPage title="Bookmarks" />
+                  <BookmarksPage />
                 </ProtectedRoute>
               }
             />
@@ -65,6 +68,8 @@ export default function App() {
             />
             {/* Public profiles keyed by username (private posts gated server-side) */}
             <Route path="u/:username" element={<ProfilePage />} />
+            {/* Single post view (Member D extends with the reply thread) */}
+            <Route path="posts/:id" element={<PostDetailPage />} />
             <Route
               path="settings"
               element={
