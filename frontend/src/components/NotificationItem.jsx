@@ -1,12 +1,9 @@
 // NotificationItem.jsx — one notification row (Owner: Member A).
 // Renders the actor's avatar, a type-specific message, and relative time.
 // Clicking an unread item marks it read (optimistically) via onRead.
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
 import { Link } from 'react-router-dom';
 import Avatar from './Avatar';
-
-dayjs.extend(relativeTime);
+import { fromNow } from '../lib/time';
 
 // Verb phrase per notification type; the actor's name is rendered separately.
 const MESSAGES = {
@@ -46,7 +43,7 @@ export default function NotificationItem({ notification, onRead }) {
           {message}
         </p>
         <time className="notification__time" dateTime={createdAt}>
-          {dayjs(createdAt).fromNow()}
+          {fromNow(createdAt)}
         </time>
       </div>
       {!isRead && <span className="notification__dot" aria-label="Unread" />}
