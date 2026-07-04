@@ -74,7 +74,9 @@ Open **http://localhost:5173**.
 See `backend/README.md` for full API documentation and `frontend/README.md` for the component map.
 
 ## Live deployment
-Live URL: _TBD_ (backend → Render, frontend → Vercel). To be added before the presentation.
+- **Live URL:** _TBD_ — add here once deployed.
+- Backend → **Render**, frontend → **Vercel**. Config is committed (`render.yaml`,
+  `frontend/vercel.json`); see **[DEPLOYMENT.md](./DEPLOYMENT.md)** for the step-by-step guide.
 
 ## Team
 4-member group project. Internal task ownership is tracked separately (shared within the

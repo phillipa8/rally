@@ -3,6 +3,7 @@
 // server.js already serves UPLOAD_DIR at /uploads (with cross-origin CORP for images).
 import { Router } from 'express';
 import multer from 'multer';
+import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { requireAuth } from '../middleware/auth.js';
@@ -11,6 +12,9 @@ const router = Router();
 
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || path.join(import.meta.dirname, '..', 'uploads'));
 const BASE_URL = process.env.BASE_URL || 'http://localhost:4000';
+
+// Ensure the upload directory exists (e.g. a fresh Render persistent disk at /var/data/uploads).
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
