@@ -1,0 +1,52 @@
+// PostCard.jsx — renders a single post (Owner: Member B). Owns the post display
+// contract used by the feed, profile, bookmarks, explore, and trending.
+import { Link } from 'react-router-dom';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import Avatar from './Avatar';
+import PostActions from './PostActions';
+
+dayjs.extend(relativeTime);
+
+export default function PostCard({ post, onChange }) {
+  if (!post) return null;
+  // Tolerate both the rich shape ({author:{...}}) and a flat legacy shape.
+  const author = post.author || {
+    username: post.username,
+    displayName: post.displayName,
+    avatarUrl: post.avatarUrl,
+  };
+
+  return (
+    <article className="post">
+      {post.repostedBy && <p className="post__repost">🔁 Reposted by @{post.repostedBy}</p>}
+
+      <div className="post__head">
+        <Link to={`/u/${author.username}`} className="post__author">
+          <Avatar user={author} size={40} />
+          <span className="post__names">
+            <span className="post__name">{author.displayName}</span>
+            <span className="post__handle">@{author.username}</span>
+          </span>
+        </Link>
+        <Link to={`/posts/${post.id}`} className="post__time" title={post.createdAt}>
+          {dayjs(post.createdAt).fromNow()}
+        </Link>
+      </div>
+
+      <Link to={`/posts/${post.id}`} className="post__content">
+        {post.content}
+      </Link>
+
+      {post.mediaUrl && (
+        <Link to={`/posts/${post.id}`} className="post__media-wrap">
+          <img className="post__media" src={post.mediaUrl} alt="attachment" loading="lazy" />
+        </Link>
+      )}
+
+      {/* EventChip slot (Member C) renders here when post.eventId is set. */}
+
+      <PostActions post={post} onChange={onChange} />
+    </article>
+  );
+}

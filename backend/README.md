@@ -50,18 +50,20 @@ Legend — **Auth**: 🔒 requires login · 🌐 public (private content filtere
 | PUT | `/api/follow-requests/:id/accept` | 🔒 | — | `{ status:"accepted" }`; `:id` = requester's user id; notifies them (`follow`). 404 if no pending request. |
 | PUT | `/api/follow-requests/:id/reject` | 🔒 | — | `{ status:"rejected" }`; removes the pending row. 404 if no pending request. |
 
-### Posts, feed, media, bookmarks — `routes/posts.js`, `routes/feed.js`, `routes/media.js`  (Owner: Member B)
+### Posts, feed, media, bookmarks — `routes/posts.js`, `routes/feed.js`, `routes/media.js`, `routes/bookmarks.js`  (Owner: Member B)
+Every post is returned in a shared shape (`lib/postQuery.js`): `{ id, content, mediaUrl, eventId, parentPostId, createdAt, author:{id,username,displayName,avatarUrl}, likeCount, repostCount, replyCount, bookmarkCount, likedByMe, repostedByMe, bookmarkedByMe }`. Private authors' posts are gated by `visiblePostsWhere`.
+
 | Method | URL | Auth | Body | Response |
 |---|---|---|---|---|
-| POST | `/api/posts` | 🔒 | TODO (content ≤280, optional eventId, parentPostId, mediaUrl) | TODO |
-| GET | `/api/posts/:id` | ⚪ | — | TODO |
-| DELETE | `/api/posts/:id` | 🔒 | — | TODO (owner → 204, else 403) |
-| GET | `/api/feed` | 🔒 | — | TODO (reverse-chron, followed + self + reposts) |
-| GET | `/api/feed/explore` | 🌐 | — | TODO (public accounts only) |
-| POST | `/api/media` | 🔒 | multipart (single image ≤5MB) | TODO `{ url }` |
-| GET | `/api/bookmarks` | 🔒 | — | TODO |
-| POST | `/api/posts/:id/bookmark` | 🔒 | — | TODO |
-| DELETE | `/api/posts/:id/bookmark` | 🔒 | — | TODO |
+| POST | `/api/posts` | 🔒 | `{ content (1–280), eventId?, parentPostId?, mediaUrl? }` | 201 `{ post }`. 400 on empty/>280 or invalid eventId/parentPostId. |
+| GET | `/api/posts/:id` | ⚪ | — | `{ post }`. 404 if not found or hidden (private author). |
+| DELETE | `/api/posts/:id` | 🔒 | — | 204 (author). 403 if not the author, 404 if missing. |
+| GET | `/api/feed` | 🔒 | — | `{ posts }` — reverse-chron top-level posts from you + accepted-followed, incl. reposts (`repostedBy`). **401 if unauthenticated.** |
+| GET | `/api/feed/explore` | 🌐 | — | `{ posts }` — recent top-level posts from public accounts only. |
+| POST | `/api/media` | 🔒 | `multipart/form-data`, field `image` (≤5MB, `image/*`) | 201 `{ url }`. 400 on non-image / too large / missing. |
+| GET | `/api/bookmarks` | 🔒 | — | `{ posts }` — your saved posts, newest bookmark first. |
+| POST | `/api/posts/:id/bookmark` | 🔒 | — | 201 `{ bookmarked: true }` (idempotent). 404 if post missing. |
+| DELETE | `/api/posts/:id/bookmark` | 🔒 | — | 204 (idempotent). 404 if post missing. |
 
 ### Events, participation, calendar, categories — `routes/events.js`, `routes/categories.js`  (Owner: Member C)
 | Method | URL | Auth | Body | Response |

@@ -16,6 +16,10 @@ import usersRouter from './routes/users.js';
 import followRequestsRouter from './routes/followRequests.js';
 import notificationsRouter from './routes/notifications.js';
 import trendingRouter from './routes/trending.js';
+import postsRouter from './routes/posts.js';
+import feedRouter from './routes/feed.js';
+import mediaRouter from './routes/media.js';
+import bookmarksRouter from './routes/bookmarks.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -67,11 +71,11 @@ app.use('/api/users', usersRouter);            // A
 app.use('/api/follow-requests', followRequestsRouter); // A
 app.use('/api/notifications', notificationsRouter);    // A
 app.use('/api/trending', trendingRouter);              // A
+app.use('/api/posts', postsRouter);                    // B (likes/reposts/replies toggles from D)
+app.use('/api/feed', feedRouter);                      // B
+app.use('/api/media', mediaRouter);                    // B
+app.use('/api/bookmarks', bookmarksRouter);            // B
 // TODO (feature tracks):
-//   app.use('/api/posts', postsRouter);          // B (+ likes/reposts/replies from D)
-//   app.use('/api/feed', feedRouter);            // B
-//   app.use('/api/media', mediaRouter);          // B
-//   app.use('/api/bookmarks', ...);              // B
 //   app.use('/api/events', eventsRouter);        // C
 //   app.use('/api/categories', categoriesRouter);// C
 //   app.use('/api/search', searchRouter);        // D
