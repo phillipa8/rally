@@ -1,12 +1,9 @@
 // PostCard.jsx — renders a single post (Owner: Member B). Owns the post display
 // contract used by the feed, profile, bookmarks, explore, and trending.
 import { Link } from 'react-router-dom';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
+import { fromNow } from '../lib/time';
 import Avatar from './Avatar';
 import PostActions from './PostActions';
-
-dayjs.extend(relativeTime);
 
 export default function PostCard({ post, onChange }) {
   if (!post) return null;
@@ -30,7 +27,7 @@ export default function PostCard({ post, onChange }) {
           </span>
         </Link>
         <Link to={`/posts/${post.id}`} className="post__time" title={post.createdAt}>
-          {dayjs(post.createdAt).fromNow()}
+          {fromNow(post.createdAt)}
         </Link>
       </div>
 

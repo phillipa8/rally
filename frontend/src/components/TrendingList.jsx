@@ -5,6 +5,7 @@
 import dayjs from 'dayjs';
 import { Link } from 'react-router-dom';
 import { useApi } from '../api/hooks';
+import { formatDate } from '../lib/time';
 import LoadingState from './LoadingState';
 import ErrorState from './ErrorState';
 import EmptyState from './EmptyState';
@@ -23,7 +24,7 @@ function PostRow({ post, rank }) {
         <p className="trending__meta">
           <Link to={`/u/${post.username}`}>@{post.username}</Link>
           {' · '}
-          {dayjs(post.createdAt).format('MMM D')}
+          {formatDate(post.createdAt, 'MMM D')}
         </p>
       </div>
       <span className="trending__score" title="Likes + reposts in the last 24h">
