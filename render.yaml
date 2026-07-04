@@ -1,0 +1,28 @@
+# Render Blueprint for the Rally API. See DEPLOYMENT.md for the full walkthrough.
+# Render auto-injects PORT (server.js reads process.env.PORT).
+services:
+  - type: web
+    name: rally-api
+    runtime: node
+    rootDir: backend
+    plan: starter               # NOTE: persistent disks require a paid instance.
+    buildCommand: npm install    # compiles better-sqlite3 / bcrypt (native)
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true      # Render generates a long random secret
+      - key: CLIENT_ORIGIN
+        sync: false              # set to your Vercel URL, e.g. https://rally.vercel.app
+      - key: BASE_URL
+        sync: false              # set to this service's URL, e.g. https://rally-api.onrender.com
+      - key: DATABASE_PATH
+        value: /var/data/app.db  # on the persistent disk below
+      - key: UPLOAD_DIR
+        value: /var/data/uploads
+    disk:
+      name: rally-data           # keeps the SQLite DB + uploaded images across deploys
+      mountPath: /var/data
+      sizeGB: 1

@@ -21,9 +21,28 @@ graph, event discovery, and participation — a post can *share* an event, the c
 aggregates events by date and shows what you're attending, and trending surfaces the most
 engaging events in the last 24 hours.
 
-**Chosen extended features (and why):** _TODO — reposts, likes, replies, search, media,
-notifications, trending, bookmarks, fixed categories; explain how each supports the
-"discover and show up to events" product vision._
+**Chosen extended features (and why).** Rally goes well past the required minimum of two
+extended features because each one directly serves the core loop of *discovering an event and
+actually showing up*:
+
+- **Media attachments** — an event post can carry a flyer or photo, making it scannable and
+  more shareable than plain text.
+- **Reposts** push an event beyond the creator's own followers, and **Likes** provide the
+  lightweight engagement signal that powers **Trending** (the most-engaged events and posts in
+  the last 24 hours) — the app's primary discovery surface.
+- **Replies** turn each post into a discussion thread, so prospective attendees can ask
+  logistics ("what time?", "where exactly?") before committing.
+- **Bookmarks** let users privately save events they're still considering, kept separate from
+  the public "participate" action.
+- **Search** and **fixed categories** (a deliberate, curated substitute for free-form
+  `#hashtags` — sports, anime, music, gaming, food, study) make browsing predictable and keep
+  the interest graph clean.
+- **Notifications** close the loop: users hear when an event they joined changes, or when their
+  own posts get engagement, pulling them back into the app.
+
+Together these turn a plain CRUD feed into an event-discovery product — you *find* events by
+category / search / trending, *discuss* them via replies, *save* them via bookmarks, and get
+*pulled back* by notifications.
 
 ## 2.2 Architecture Diagram  *(owner: Member A)*
 > UML component diagram: React frontend ↔ Express backend ↔ SQLite. Mark which interactions
