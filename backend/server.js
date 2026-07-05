@@ -20,6 +20,7 @@ import postsRouter from './routes/posts.js';
 import feedRouter from './routes/feed.js';
 import mediaRouter from './routes/media.js';
 import bookmarksRouter from './routes/bookmarks.js';
+import categoriesRouter from './routes/categories.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -75,9 +76,9 @@ app.use('/api/posts', postsRouter);                    // B (likes/reposts/repli
 app.use('/api/feed', feedRouter);                      // B
 app.use('/api/media', mediaRouter);                    // B
 app.use('/api/bookmarks', bookmarksRouter);            // B
+app.use('/api/categories', categoriesRouter);          // C
 // TODO (feature tracks):
 //   app.use('/api/events', eventsRouter);        // C
-//   app.use('/api/categories', categoriesRouter);// C
 //   app.use('/api/search', searchRouter);        // D
 
 // --- 404 + central error handler (LAST) ----------------------------------
