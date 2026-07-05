@@ -3,16 +3,15 @@ import { Router } from 'express';
 import db from '../db/db.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { postColumns, mapPost } from '../lib/postQuery.js';
-import { visiblePostsWhere } from '../lib/visibility.js';
 
 const router = Router();
 
 // GET /api/feed — authenticated, reverse-chronological.
 // Top-level posts by you + accounts you follow (accepted), UNION reposts by that same
-// set (each shown as the original post, tagged with who reposted).
+// set (each shown as the original post, tagged with who reposted). Reposts stay empty
+// until Member D ships the repost endpoints; the query already includes them.
 router.get('/', requireAuth, (req, res) => {
   const { columns, viewerParams } = postColumns(req.userId);
-  const v = visiblePostsWhere(req.userId, 'u');
   const sql = `
     SELECT ${columns}, p.created_at AS sortTime, NULL AS repostedBy
       FROM posts p
@@ -27,15 +26,14 @@ router.get('/', requireAuth, (req, res) => {
       JOIN posts p  ON p.id = rp.post_id
       JOIN users u  ON u.id = p.author_id
       JOIN users ru ON ru.id = rp.user_id
-     WHERE (rp.user_id = ?
-            OR rp.user_id IN (SELECT following_id FROM follows
-                               WHERE follower_id = ? AND status = 'accepted'))
-       AND ${v.clause}
+     WHERE rp.user_id = ?
+        OR rp.user_id IN (SELECT following_id FROM follows
+                           WHERE follower_id = ? AND status = 'accepted')
      ORDER BY sortTime DESC
      LIMIT 100`;
   const params = [
     ...viewerParams, req.userId, req.userId, // first branch
-    ...viewerParams, req.userId, req.userId, ...v.params, // second branch
+    ...viewerParams, req.userId, req.userId, // second branch
   ];
   const rows = db.prepare(sql).all(...params);
   res.json({ posts: rows.map(mapPost) });

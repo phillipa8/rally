@@ -83,15 +83,15 @@ Every post is returned in a shared shape (`lib/postQuery.js`): `{ id, content, m
 ### Engagement & search — `routes/posts.js` (likes/reposts/replies), `routes/search.js`  (Owner: Member D)
 | Method | URL | Auth | Body | Response |
 |---|---|---|---|---|
-| POST | `/api/posts/:id/like` | 🔒 | — | 201/200 `{ liked:true, likeCount }` — idempotent; emits `like` notification to the author unless liking your own post. 404 if missing/hidden. |
-| DELETE | `/api/posts/:id/like` | 🔒 | — | 204 — idempotent unlike. 404 if missing/hidden. |
-| GET | `/api/posts/:id/likes` | ⚪ | — | `{ users:[{ id, username, displayName, avatarUrl, likedAt }] }` newest first. 404 if missing/hidden. |
-| POST | `/api/posts/:id/repost` | 🔒 | — | 201/200 `{ reposted:true, repostCount }` — idempotent; emits `repost` notification unless reposting your own post. 404 if missing/hidden. |
-| DELETE | `/api/posts/:id/repost` | 🔒 | — | 204 — idempotent unrepost. 404 if missing/hidden. |
-| GET | `/api/posts/:id/replies` | ⚪ | — | `{ replies:[…post] }` direct replies, oldest first; private-gated. 404 if parent missing/hidden. |
-| GET | `/api/search/posts` | ⚪ | query: `q` | `{ posts:[…post] }` FTS5 first, LIKE fallback, private-gated. |
-| GET | `/api/search/users` | 🌐 | query: `q` | `{ users:[{ id, username, displayName, bio, avatarUrl, isPrivate, followStatus, isMe }] }`. |
-| GET | `/api/search/events` | 🌐 | query: `q` | `{ events:[…] }` FTS5 first, LIKE fallback. |
+| POST | `/api/posts/:id/like` | 🔒 | — | TODO |
+| DELETE | `/api/posts/:id/like` | 🔒 | — | TODO |
+| GET | `/api/posts/:id/likes` | ⚪ | — | TODO |
+| POST | `/api/posts/:id/repost` | 🔒 | — | TODO |
+| DELETE | `/api/posts/:id/repost` | 🔒 | — | TODO |
+| GET | `/api/posts/:id/replies` | ⚪ | — | TODO (thread) |
+| GET | `/api/search/posts` | ⚪ | query: `q` | TODO (FTS5, private-gated) |
+| GET | `/api/search/users` | 🌐 | query: `q` | TODO |
+| GET | `/api/search/events` | 🌐 | query: `q` | TODO (FTS5) |
 
 ### Notifications & trending — `routes/notifications.js`, `routes/trending.js`  (Owner: Member A)
 | Method | URL | Auth | Body | Response |

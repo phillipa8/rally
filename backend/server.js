@@ -21,7 +21,6 @@ import feedRouter from './routes/feed.js';
 import mediaRouter from './routes/media.js';
 import bookmarksRouter from './routes/bookmarks.js';
 import categoriesRouter from './routes/categories.js';
-import searchRouter from './routes/search.js';
 import eventsRouter from './routes/events.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
@@ -79,9 +78,6 @@ app.use('/api/feed', feedRouter);                      // B
 app.use('/api/media', mediaRouter);                    // B
 app.use('/api/bookmarks', bookmarksRouter);            // B
 app.use('/api/categories', categoriesRouter);          // C
-app.use('/api/search', searchRouter);                  // D
-// TODO (feature tracks):
-//   app.use('/api/events', eventsRouter);        // C
 app.use('/api/events', eventsRouter);                  // C
 // TODO (feature tracks):
 //   app.use('/api/search', searchRouter);        // D

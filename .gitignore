@@ -1,8 +1,5 @@
 # ─── Local-only docs (shared privately, never pushed) ───
 WORK_DIVISION.md
-final-project.pdf
-Web Info Draft Group 1.pdf
-Context.md
 
 # ─── Dependencies ───
 node_modules/
@@ -52,4 +49,3 @@ pnpm-debug.log*
 
 # ─── Test / coverage ───
 coverage/
-
