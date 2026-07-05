@@ -7,6 +7,9 @@ export default function SearchBar({
   placeholder = 'Search posts, people, events...',
   autoFocus = false,
   className = '',
+  clearOnSearch = false,
+  debounce = true,
+  showButton = false,
 }) {
   const [text, setText] = useState(value);
 
@@ -15,15 +18,21 @@ export default function SearchBar({
   }, [value]);
 
   useEffect(() => {
+    if (!debounce) return undefined;
     const next = text.trim();
     if (next === value.trim()) return undefined;
-    const timer = setTimeout(() => onSearch?.(next), 350);
+    const timer = setTimeout(() => {
+      onSearch?.(next);
+      if (clearOnSearch && next) setText('');
+    }, 350);
     return () => clearTimeout(timer);
-  }, [text, value, onSearch]);
+  }, [text, value, onSearch, clearOnSearch, debounce]);
 
   function submit(e) {
     e.preventDefault();
-    onSearch?.(text.trim());
+    const next = text.trim();
+    onSearch?.(next);
+    if (clearOnSearch && next) setText('');
   }
 
   return (
@@ -36,6 +45,11 @@ export default function SearchBar({
         autoFocus={autoFocus}
         onChange={(e) => setText(e.target.value)}
       />
+      {showButton && (
+        <button type="submit" className="search-bar__button" aria-label="Search">
+          Search
+        </button>
+      )}
     </form>
   );
 }

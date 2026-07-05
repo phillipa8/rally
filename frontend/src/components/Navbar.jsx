@@ -35,7 +35,13 @@ export default function Navbar() {
       </Link>
 
       <div className="navbar__search">
-        <SearchBar onSearch={handleSearch} placeholder="Search events, posts, people..." />
+        <SearchBar
+          onSearch={handleSearch}
+          placeholder="Search events, posts, people..."
+          clearOnSearch
+          debounce={false}
+          showButton
+        />
       </div>
 
       <nav className="navbar__actions">

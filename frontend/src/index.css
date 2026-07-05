@@ -78,7 +78,19 @@ a:hover { text-decoration: underline; }
   background: var(--bg);
   font-size: 0.9rem;
 }
-.search-bar { width: 100%; }
+.search-bar { width: 100%; display: flex; align-items: center; gap: 0.4rem; }
+.search-bar__button {
+  border: none;
+  border-radius: 999px;
+  background: var(--brand);
+  color: #fff;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.48rem 0.85rem;
+  cursor: pointer;
+}
+.search-bar__button:hover { background: var(--brand-dark); }
 .search-bar--large input {
   background: var(--surface);
   padding: 0.75rem 1rem;
