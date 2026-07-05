@@ -11,7 +11,7 @@ import UserCard from './UserCard';
 function EventResult({ event }) {
   return (
     <article className="event-result">
-      <div className="event-result__main">
+      <Link to={`/events/${event.id}`} className="event-result__main">
         <p className="event-result__title">{event.title}</p>
         {event.description && <p className="event-result__description">{event.description}</p>}
         <p className="event-result__meta">
@@ -22,7 +22,7 @@ function EventResult({ event }) {
           {' · '}
           {event.participantCount} attending
         </p>
-      </div>
+      </Link>
       <Link to={`/u/${event.creator.username}`} className="event-result__creator">
         @{event.creator.username}
       </Link>
