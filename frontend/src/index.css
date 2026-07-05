@@ -371,7 +371,8 @@ a:hover { text-decoration: underline; }
 .search-results > .user-card:last-child,
 .event-result:last-child { border-bottom: none; }
 .event-result { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
-.event-result__main { min-width: 0; }
+.event-result__main { min-width: 0; color: var(--text); flex: 1; }
+.event-result__main:hover { text-decoration: none; }
 .event-result__title { margin: 0; font-weight: 700; }
 .event-result__description {
   margin: 0.25rem 0 0;

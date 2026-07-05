@@ -85,6 +85,7 @@ app.use('/api/search', searchRouter);                  // D
 app.use('/api/events', eventsRouter);                  // C
 // TODO (feature tracks):
 //   app.use('/api/search', searchRouter);        // D
+app.use('/api/events', eventsRouter);                  // C
 
 // --- 404 + central error handler (LAST) ----------------------------------
 app.use(notFound);
