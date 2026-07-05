@@ -1,13 +1,22 @@
-// Navbar.jsx — top bar: brand, (placeholder) search, and auth actions.
-import { useState } from 'react';
+// Navbar.jsx — top bar: brand, search, and auth actions.
+import { useCallback, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Avatar from './Avatar';
+import SearchBar from './SearchBar';
 
 export default function Navbar() {
   const { isAuthenticated, user, logout, loading } = useAuth();
   const navigate = useNavigate();
   const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleSearch = useCallback(
+    (query) => {
+      if (!query) return;
+      navigate(`/search?q=${encodeURIComponent(query)}`);
+    },
+    [navigate]
+  );
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -25,9 +34,8 @@ export default function Navbar() {
         🗓️ Rally
       </Link>
 
-      {/* Search is wired up by Track D; this is the shell slot. */}
       <div className="navbar__search">
-        <input type="search" placeholder="Search events, posts, people…" aria-label="Search" disabled />
+        <SearchBar onSearch={handleSearch} placeholder="Search events, posts, people..." />
       </div>
 
       <nav className="navbar__actions">

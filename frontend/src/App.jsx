@@ -13,6 +13,7 @@ import ProfilePage from './pages/ProfilePage';
 import NotificationsPage from './pages/NotificationsPage';
 import TrendingPage from './pages/TrendingPage';
 import SettingsPage from './pages/SettingsPage';
+import SearchPage from './pages/SearchPage';
 import PlaceholderPage from './pages/PlaceholderPage';
 import NotFoundPage from './pages/NotFoundPage';
 
@@ -38,7 +39,7 @@ export default function App() {
             {/* Public discovery pages */}
             <Route path="explore" element={<ExplorePage />} />
             <Route path="calendar" element={<PlaceholderPage title="Calendar" />} />
-            <Route path="search" element={<PlaceholderPage title="Search" />} />
+            <Route path="search" element={<SearchPage />} />
             <Route path="trending" element={<TrendingPage />} />
 
             {/* Protected pages */}
