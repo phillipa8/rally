@@ -7,6 +7,8 @@ import HomeFeedPage from './pages/HomeFeedPage';
 import ExplorePage from './pages/ExplorePage';
 import BookmarksPage from './pages/BookmarksPage';
 import PostDetailPage from './pages/PostDetailPage';
+import EventsPage from './pages/EventsPage';
+import EventDetailPage from './pages/EventDetailPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
@@ -71,6 +73,9 @@ export default function App() {
             <Route path="u/:username" element={<ProfilePage />} />
             {/* Single post view (Member D extends with the reply thread) */}
             <Route path="posts/:id" element={<PostDetailPage />} />
+            {/* Events: browse/create hub + single event (public read, create requires auth) */}
+            <Route path="events" element={<EventsPage />} />
+            <Route path="events/:id" element={<EventDetailPage />} />
             <Route
               path="settings"
               element={

@@ -18,3 +18,16 @@ export function fromNow(ts) {
 export function formatDate(ts, fmt = 'MMM D, YYYY') {
   return dayjs.utc(ts).local().format(fmt);
 }
+
+// Convert a browser <input type="datetime-local"> value (local wall-clock,
+// 'YYYY-MM-DDTHH:mm') to the UTC 'YYYY-MM-DD HH:MM:SS' string the API stores,
+// keeping event times consistent with the UTC-in-storage convention above.
+export function toSqlUtc(localInput) {
+  return dayjs(localInput).utc().format('YYYY-MM-DD HH:mm:ss');
+}
+
+// Inverse of toSqlUtc: a stored UTC timestamp -> the local value a
+// datetime-local input expects ('YYYY-MM-DDTHH:mm'), for pre-filling edit forms.
+export function toDatetimeLocal(ts) {
+  return dayjs.utc(ts).local().format('YYYY-MM-DDTHH:mm');
+}
