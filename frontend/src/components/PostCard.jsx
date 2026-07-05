@@ -1,9 +1,11 @@
 // PostCard.jsx — renders a single post (Owner: Member B). Owns the post display
 // contract used by the feed, profile, bookmarks, explore, and trending.
+
 import { Link } from 'react-router-dom';
 import { fromNow } from '../lib/time';
 import Avatar from './Avatar';
 import PostActions from './PostActions';
+import EventChip from './EventChip';
 
 export default function PostCard({ post, onChange }) {
   if (!post) return null;
@@ -41,7 +43,8 @@ export default function PostCard({ post, onChange }) {
         </Link>
       )}
 
-      {/* EventChip slot (Member C) renders here when post.eventId is set. */}
+      {/* EventChip slot (Member C): shown when the post shares an event. */}
+      {post.eventId && <EventChip eventId={post.eventId} />}
 
       <PostActions post={post} onChange={onChange} />
     </article>

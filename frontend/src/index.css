@@ -468,3 +468,44 @@ a:hover { text-decoration: underline; }
   border: 1px solid var(--border);
   object-fit: cover;
 }
+
+/* ---------- Events (Member C) ---------- */
+.page__header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.page__subtitle { margin: 1.5rem 0 0.75rem; font-size: 1.1rem; }
+
+.event-form { display: flex; flex-direction: column; gap: 0.75rem; }
+.event-form__row { display: flex; gap: 0.75rem; }
+.event-form__row .field { flex: 1; }
+.event-form__actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.25rem; }
+
+.event-card { display: block; text-decoration: none; color: inherit; }
+.event-card:hover { border-color: var(--brand-dark); }
+.event-card__head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.event-card__count { font-size: 0.8rem; }
+.event-card__title { margin: 0.4rem 0 0.2rem; font-size: 1.05rem; }
+.event-card__meta { margin: 0; font-size: 0.85rem; display: flex; flex-wrap: wrap; gap: 0.15rem; }
+
+.event-detail__head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.event-detail__controls { display: flex; gap: 0.5rem; }
+.event-detail__title { margin: 0.5rem 0; }
+.event-detail__desc { margin: 0 0 1rem; white-space: pre-wrap; }
+.event-detail__facts { display: grid; grid-template-columns: auto 1fr; gap: 0.35rem 1rem; margin: 0 0 1rem; }
+.event-detail__facts dt { font-weight: 600; color: var(--muted); }
+.event-detail__facts dd { margin: 0; }
+.event-detail__creator { display: flex; align-items: center; gap: 0.5rem; }
+.event-detail__actions { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+
+.event-chip {
+  display: inline-flex; align-items: center; gap: 0.35rem; max-width: 100%;
+  margin: 0.5rem 0 0; padding: 0.3rem 0.6rem; border-radius: 999px;
+  border: 1px solid var(--border); background: #eef2ff; color: var(--brand-dark);
+  font-size: 0.85rem; font-weight: 600; text-decoration: none;
+}
+.event-chip:hover { border-color: var(--brand-dark); }
+.event-chip--muted { background: transparent; color: var(--muted); }
+.event-chip__title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.event-chip__date { font-weight: 500; flex-shrink: 0; }
+
+@media (max-width: 640px) {
+  .event-form__row { flex-direction: column; }
+}
