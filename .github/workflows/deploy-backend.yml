@@ -1,0 +1,25 @@
+name: Deploy backend to Render
+
+# The Render service was created from a public repo URL, so Render's native
+# GitHub auto-deploy webhook isn't wired. Instead, we trigger a deploy via
+# Render's Deploy Hook whenever backend code changes on main.
+# (The frontend deploys automatically through Vercel's own Git integration.)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+  workflow_dispatch: {}      # allows manually triggering a backend deploy from the Actions tab
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          echo "Triggering Render deploy…"
+          curl -fsS -X POST "$RENDER_DEPLOY_HOOK"
+          echo "\nDeploy triggered."
