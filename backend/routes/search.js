@@ -140,11 +140,18 @@ function searchEventsLike(q) {
         WHERE e.title LIKE ? ESCAPE '\\'
            OR e.description LIKE ? ESCAPE '\\'
            OR e.location LIKE ? ESCAPE '\\'
+           OR c.name LIKE ? ESCAPE '\\'
+           OR c.slug LIKE ? ESCAPE '\\'
         ORDER BY e.start_time ASC, e.id ASC
         LIMIT 50`
     )
-    .all(pattern, pattern, pattern);
+    .all(pattern, pattern, pattern, pattern, pattern);
   return rows.map(eventFromRow);
+}
+
+function mergeById(primary, secondary) {
+  const seen = new Set(primary.map((item) => item.id));
+  return [...primary, ...secondary.filter((item) => !seen.has(item.id))].slice(0, 50);
 }
 
 router.get('/posts', optionalAuth, validateQuery(searchQuerySchema), (req, res) => {
@@ -162,6 +169,9 @@ router.get('/posts', optionalAuth, validateQuery(searchQuerySchema), (req, res) 
 router.get('/users', optionalAuth, validateQuery(searchQuerySchema), (req, res) => {
   const { q } = req.validatedQuery;
   const pattern = likePattern(q);
+  const usernameQuery = q.startsWith('@') ? q.slice(1).trim() : q;
+  const usernamePattern = likePattern(usernameQuery || q);
+  const exactPrivateUsername = q.startsWith('@') ? usernameQuery : '';
   const rows = db
     .prepare(
       `SELECT u.id, u.username, u.display_name AS displayName, u.bio,
@@ -172,15 +182,32 @@ router.get('/users', optionalAuth, validateQuery(searchQuerySchema), (req, res) 
               END AS followStatus,
               CASE WHEN ? = u.id THEN 1 ELSE 0 END AS isMe
          FROM users u
-        WHERE u.username LIKE ? ESCAPE '\\'
-           OR u.display_name LIKE ? ESCAPE '\\'
-           OR u.bio LIKE ? ESCAPE '\\'
+        WHERE (
+              u.is_private = 0
+              AND (
+                   u.username LIKE ? ESCAPE '\\'
+                OR u.display_name LIKE ? ESCAPE '\\'
+                OR u.bio LIKE ? ESCAPE '\\'
+              )
+        )
+           OR (u.is_private = 1 AND ? != '' AND u.username = ?)
         ORDER BY
           CASE WHEN lower(u.username) = lower(?) THEN 0 ELSE 1 END,
           u.username ASC
         LIMIT 50`
     )
-    .all(req.userId, req.userId, req.userId, req.userId, pattern, pattern, pattern, q);
+    .all(
+      req.userId,
+      req.userId,
+      req.userId,
+      req.userId,
+      usernamePattern,
+      pattern,
+      pattern,
+      exactPrivateUsername,
+      exactPrivateUsername,
+      usernameQuery || q
+    );
 
   res.json({ users: rows.map(publicUser) });
 });
@@ -193,7 +220,7 @@ router.get('/events', optionalAuth, validateQuery(searchQuerySchema), (req, res)
   } catch (_err) {
     events = [];
   }
-  if (!events.length) events = searchEventsLike(q);
+  events = mergeById(events, searchEventsLike(q));
   res.json({ events });
 });
 

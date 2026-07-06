@@ -49,6 +49,11 @@ function followStatus(viewerId, targetId) {
   return row ? row.status : null;
 }
 
+function canViewProfileContent(viewerId, target) {
+  if (!target.is_private || viewerId === target.id) return true;
+  return followStatus(viewerId, target.id) === 'accepted';
+}
+
 // Aggregate profile counts. Only 'accepted' follows count toward follower/following;
 // pending requests are not public relationships yet.
 function profileCounts(userId) {
@@ -60,7 +65,8 @@ function profileCounts(userId) {
     .get(userId).n;
   const posts = db
     .prepare('SELECT COUNT(*) AS n FROM posts WHERE author_id = ? AND parent_post_id IS NULL')
-    .get(userId).n;
+    .get(userId).n +
+    db.prepare('SELECT COUNT(*) AS n FROM reposts WHERE user_id = ?').get(userId).n;
   return { followers, following, posts };
 }
 
@@ -112,18 +118,50 @@ router.get('/:username', optionalAuth, (req, res) => {
 router.get('/:username/posts', optionalAuth, (req, res) => {
   const author = findByUsername(req.params.username);
   if (!author) return res.status(404).json({ error: 'User not found' });
+  if (!canViewProfileContent(req.userId, author)) return res.json({ posts: [] });
+
+  const v = visiblePostsWhere(req.userId);
+  const { columns, viewerParams } = postColumns(req.userId);
+  const sql = `
+    SELECT ${columns}, p.created_at AS sortTime, NULL AS repostedBy
+      FROM posts p
+      JOIN users u ON u.id = p.author_id
+     WHERE p.author_id = ? AND p.parent_post_id IS NULL AND ${v.clause}
+    UNION ALL
+    SELECT ${columns}, r.created_at AS sortTime, ru.username AS repostedBy
+      FROM reposts r
+      JOIN posts p ON p.id = r.post_id
+      JOIN users u ON u.id = p.author_id
+      JOIN users ru ON ru.id = r.user_id
+     WHERE r.user_id = ? AND ${v.clause}
+     ORDER BY sortTime DESC
+     LIMIT 100`;
+  const rows = db
+    .prepare(sql)
+    .all(...viewerParams, author.id, ...v.params, ...viewerParams, author.id, ...v.params);
+
+  res.json({ posts: rows.map(mapPost) });
+});
+
+// GET /api/users/:username/likes — posts this user liked, newest liked first.
+router.get('/:username/likes', optionalAuth, (req, res) => {
+  const target = findByUsername(req.params.username);
+  if (!target) return res.status(404).json({ error: 'User not found' });
+  if (!canViewProfileContent(req.userId, target)) return res.json({ posts: [] });
 
   const v = visiblePostsWhere(req.userId);
   const { columns, viewerParams } = postColumns(req.userId);
   const rows = db
     .prepare(
-      `SELECT ${columns}
-         FROM posts p
+      `SELECT ${columns}, l.created_at AS likedAt
+         FROM likes l
+         JOIN posts p ON p.id = l.post_id
          JOIN users u ON u.id = p.author_id
-        WHERE p.author_id = ? AND p.parent_post_id IS NULL AND ${v.clause}
-        ORDER BY p.created_at DESC, p.id DESC`
+        WHERE l.user_id = ? AND ${v.clause}
+        ORDER BY l.created_at DESC, p.created_at DESC
+        LIMIT 100`
     )
-    .all(...viewerParams, author.id, ...v.params);
+    .all(...viewerParams, target.id, ...v.params);
 
   res.json({ posts: rows.map(mapPost) });
 });
