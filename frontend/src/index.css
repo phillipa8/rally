@@ -639,6 +639,44 @@ a:hover { text-decoration: underline; }
 .post-action--bookmark-on { color: var(--brand); }
 .post-action--delete { margin-left: auto; }
 .post-action--delete:hover { background: #fef2f2; color: var(--danger); }
+
+/* ---------- Polls ---------- */
+.poll { display: flex; flex-direction: column; gap: 0.4rem; margin: 0.2rem 0; }
+.poll-option {
+  text-align: left; padding: 0.55rem 0.8rem; border: 1px solid var(--brand);
+  background: #eef2ff; color: var(--brand-dark); border-radius: 8px;
+  font: inherit; font-weight: 600; cursor: pointer;
+}
+.poll-option:hover { background: #e0e7ff; }
+.poll-option:disabled { opacity: 0.6; cursor: default; }
+.poll-result {
+  position: relative; overflow: hidden; padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border); border-radius: 8px; background: var(--bg);
+  display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;
+}
+.poll-result__bar { position: absolute; inset: 0 auto 0 0; background: #e0e7ff; z-index: 0; transition: width 0.3s ease; }
+.poll-result--mine .poll-result__bar { background: #c7d2fe; }
+.poll-result__label { position: relative; z-index: 1; flex: 1; font-weight: 600; }
+.poll-result__pct { position: relative; z-index: 1; color: var(--muted); font-variant-numeric: tabular-nums; }
+.poll__meta { margin: 0.1rem 0 0; font-size: 0.8rem; color: var(--muted); }
+.poll__error { color: var(--danger); }
+
+.poll-editor { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.2rem 0; }
+.poll-editor__row { display: flex; align-items: center; gap: 0.4rem; }
+.poll-editor__input {
+  flex: 1; padding: 0.5rem 0.7rem; border: 1px solid var(--border); border-radius: 8px; font: inherit;
+}
+.poll-editor__input:focus { outline: 2px solid var(--brand); border-color: var(--brand); }
+.poll-editor__remove { border: none; background: none; color: var(--muted); cursor: pointer; font-size: 1rem; padding: 0.2rem 0.4rem; }
+.poll-editor__remove:hover { color: var(--danger); }
+.poll-editor__actions { display: flex; gap: 0.4rem; }
+
+.compose__tools { display: flex; align-items: center; gap: 0.75rem; margin-right: auto; }
+.compose__tool {
+  border: none; background: none; color: var(--muted); cursor: pointer;
+  font: inherit; font-size: 0.85rem; font-weight: 600; padding: 0.25rem 0.5rem; border-radius: 999px;
+}
+.compose__tool:hover, .compose__tool--on { background: #eef2ff; color: var(--brand); }
 .post-actions__status { color: var(--muted); font-size: 0.8rem; }
 .post-actions__error { color: var(--danger); font-size: 0.8rem; margin-left: auto; }
 

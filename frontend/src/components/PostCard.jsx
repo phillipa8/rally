@@ -7,6 +7,7 @@ import Avatar from './Avatar';
 import PostActions from './PostActions';
 import EventChip from './EventChip';
 import QuotedPostPreview from './QuotedPostPreview';
+import PollBlock from './PollBlock';
 
 export default function PostCard({ post, onChange }) {
   if (!post) return null;
@@ -43,6 +44,8 @@ export default function PostCard({ post, onChange }) {
           <img className="post__media" src={post.mediaUrl} alt="attachment" loading="lazy" />
         </Link>
       )}
+
+      {post.poll && <PollBlock post={post} onChange={onChange} />}
 
       {post.quotedPost && <QuotedPostPreview post={post.quotedPost} />}
 

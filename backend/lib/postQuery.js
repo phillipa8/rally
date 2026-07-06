@@ -2,6 +2,7 @@
 // Every post-returning endpoint (feed, single post, profile, bookmarks) uses this so
 // the API always returns the same rich shape: author + engagement counts + viewer flags.
 // Counts are derived with correlated COUNT()/EXISTS subqueries (fine at course scale).
+import db from '../db/db.js';
 import { visiblePostsWhere } from './visibility.js';
 
 // SELECT column fragment for a post `p` joined to its author `u`.
@@ -46,8 +47,34 @@ export function postColumns(viewerId) {
   };
 }
 
+// Poll for a post, or null if it isn't a poll. Options carry public vote counts;
+// myVote is the viewer's chosen option_id (null when logged out or not voted).
+export function getPoll(postId, viewerId = null) {
+  const options = db
+    .prepare(
+      `SELECT o.id, o.text,
+              (SELECT COUNT(*) FROM poll_votes v WHERE v.option_id = o.id) AS votes
+         FROM poll_options o
+        WHERE o.post_id = ?
+        ORDER BY o.position, o.id`
+    )
+    .all(postId);
+  if (options.length === 0) return null;
+  const totalVotes = options.reduce((n, o) => n + o.votes, 0);
+  let myVote = null;
+  if (viewerId != null) {
+    const row = db
+      .prepare('SELECT option_id FROM poll_votes WHERE post_id = ? AND user_id = ?')
+      .get(postId, viewerId);
+    myVote = row ? row.option_id : null;
+  }
+  return { options, totalVotes, myVote };
+}
+
 // Shape a raw joined row into the public API post object.
-export function mapPost(row) {
+// `opts.viewerId` scopes the poll's `myVote`. Existing `rows.map(mapPost)` callers pass
+// the array index as the 2nd arg, which harmlessly yields viewerId=undefined -> myVote=null.
+export function mapPost(row, opts = {}) {
   return {
     id: row.id,
     content: row.content,
@@ -87,6 +114,7 @@ export function mapPost(row) {
           }
         : { id: row.quotedPostId, unavailable: true }
       : null,
+    poll: getPoll(row.id, opts.viewerId ?? null),
     // Set only on feed rows that represent a repost (username of the reposter).
     repostedBy: row.repostedBy ?? undefined,
   };
