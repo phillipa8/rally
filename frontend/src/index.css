@@ -12,6 +12,7 @@
   --ok: #16a34a;
   --radius: 12px;
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --nav-h: 56px; /* fixed navbar height; the sidebar sticks just below it */
 }
 
 * { box-sizing: border-box; }
@@ -62,6 +63,7 @@ a:hover { text-decoration: underline; }
   align-items: center;
   gap: 1rem;
   padding: 0.6rem 1rem;
+  min-height: var(--nav-h);
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   position: sticky;
@@ -115,6 +117,12 @@ a:hover { text-decoration: underline; }
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  /* Stay in view while the feed scrolls: stick just below the navbar. */
+  position: sticky;
+  top: var(--nav-h);
+  align-self: flex-start;              /* don't stretch — required for sticky in a flex row */
+  height: calc(100vh - var(--nav-h));  /* fills the viewport; scrolls internally if long */
+  overflow-y: auto;
 }
 .sidebar__link {
   display: flex;
@@ -229,6 +237,9 @@ a:hover { text-decoration: underline; }
   .app__body { position: relative; }
   .sidebar {
     position: fixed;
+    top: auto;                /* undo desktop sticky offset */
+    height: auto;             /* undo desktop full-height */
+    overflow: visible;
     bottom: 0; left: 0; right: 0;
     width: auto;
     flex-direction: row;
@@ -633,6 +644,45 @@ a:hover { text-decoration: underline; }
 .event-chip__title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .event-chip__date { font-weight: 500; flex-shrink: 0; }
 
+.participate { display: inline-flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.participate__count { font-size: 0.85rem; }
+
+.event-list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+/* Calendar (Member C) */
+.cal-nav { display: flex; gap: 0.35rem; }
+.cal-month { margin: 0.5rem 0; font-size: 1.15rem; }
+
+.cal-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px;
+  background: var(--border); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.cal-grid__head {
+  background: var(--surface, #fff); padding: 0.4rem; text-align: center;
+  font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase;
+}
+.cal-cell {
+  background: var(--surface, #fff); min-height: 92px; padding: 0.3rem;
+  display: flex; flex-direction: column; gap: 0.2rem;
+}
+.cal-cell--blank { background: transparent; }
+.cal-cell--today { outline: 2px solid var(--brand-dark); outline-offset: -2px; }
+.cal-cell--rsvp { background: #eef2ff; }
+.cal-cell__num { font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+.cal-cell__events { display: flex; flex-direction: column; gap: 0.15rem; }
+.cal-pill {
+  display: block; padding: 0.1rem 0.35rem; border-radius: 6px;
+  background: var(--brand-dark); color: #fff; font-size: 0.72rem; font-weight: 600;
+  text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cal-cell__more { font-size: 0.7rem; color: var(--muted); }
+
+/* Desktop grid vs. mobile agenda: show one, hide the other. */
+.cal-agenda { display: none; flex-direction: column; gap: 0.75rem; }
+
 @media (max-width: 640px) {
   .event-form__row { flex-direction: column; }
+  .cal-desktop { display: none; }
+  .cal-agenda { display: flex; }
 }

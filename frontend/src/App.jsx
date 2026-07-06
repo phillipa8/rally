@@ -9,6 +9,8 @@ import BookmarksPage from './pages/BookmarksPage';
 import PostDetailPage from './pages/PostDetailPage';
 import EventsPage from './pages/EventsPage';
 import EventDetailPage from './pages/EventDetailPage';
+import CalendarPage from './pages/CalendarPage';
+import CategoryPage from './pages/CategoryPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
@@ -16,7 +18,6 @@ import NotificationsPage from './pages/NotificationsPage';
 import TrendingPage from './pages/TrendingPage';
 import SettingsPage from './pages/SettingsPage';
 import SearchPage from './pages/SearchPage';
-import PlaceholderPage from './pages/PlaceholderPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 export default function App() {
@@ -40,7 +41,7 @@ export default function App() {
             />
             {/* Public discovery pages */}
             <Route path="explore" element={<ExplorePage />} />
-            <Route path="calendar" element={<PlaceholderPage title="Calendar" />} />
+            <Route path="calendar" element={<CalendarPage />} />
             <Route path="search" element={<SearchPage />} />
             <Route path="trending" element={<TrendingPage />} />
 
@@ -76,6 +77,8 @@ export default function App() {
             {/* Events: browse/create hub + single event (public read, create requires auth) */}
             <Route path="events" element={<EventsPage />} />
             <Route path="events/:id" element={<EventDetailPage />} />
+            {/* Browse one category's events + posts */}
+            <Route path="category/:slug" element={<CategoryPage />} />
             <Route
               path="settings"
               element={

@@ -3,7 +3,7 @@
 // Edit/Delete are only shown to the creator. Participation will be implemented later in step 4.
 
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useApi, useMutation } from '../api/hooks';
 import apiClient from '../api/client';
 import { useAuth } from '../context/AuthContext';
@@ -12,6 +12,7 @@ import Avatar from '../components/Avatar';
 import Modal from '../components/Modal';
 import EventForm from '../components/EventForm';
 import ShareEventComposer from '../components/ShareEventComposer';
+import ParticipateButton from '../components/ParticipateButton';
 import PostList from '../components/PostList';
 import LoadingState from '../components/LoadingState';
 import ErrorState from '../components/ErrorState';
@@ -30,7 +31,7 @@ export default function EventDetailPage() {
   if (error) return <ErrorState message={error} onRetry={refetch} />;
   if (!data?.event) return <EmptyState title="Event not found" />;
 
-  const { event, participantCount, relatedPosts } = data;
+  const { event, participantCount, isParticipating, relatedPosts } = data;
   const isCreator = user?.id === event.creator.id;
 
   async function handleDelete() {
@@ -47,7 +48,11 @@ export default function EventDetailPage() {
     <section className="page">
       <article className="card event-detail">
         <div className="event-detail__head">
-          {event.category?.name && <span className="chip">{event.category.name}</span>}
+          {event.category?.name && (
+            <Link to={`/category/${event.category.slug}`} className="chip">
+              {event.category.name}
+            </Link>
+          )}
           {isCreator && (
             <div className="event-detail__controls">
               <button type="button" className="btn btn--small btn--ghost" onClick={() => setEditing(true)}>
@@ -89,10 +94,6 @@ export default function EventDetailPage() {
               <dd>{event.ageRestriction}+</dd>
             </div>
           )}
-          <div>
-            <dt>Going</dt>
-            <dd>{participantCount}</dd>
-          </div>
         </dl>
 
         <div className="event-detail__creator">
@@ -102,14 +103,22 @@ export default function EventDetailPage() {
           </span>
         </div>
 
-        {isAuthenticated && (
-          <div className="event-detail__actions">
-            <button type="button" className="btn btn--small" onClick={() => setSharing(true)}>
-              Share to feed
-            </button>
-            {/* TODO (step 4): <ParticipateButton eventId={event.id} …/> alongside this. */}
-          </div>
-        )}
+        <div className="event-detail__actions">
+          {isAuthenticated ? (
+            <>
+              <ParticipateButton
+                eventId={event.id}
+                participating={isParticipating}
+                count={participantCount}
+              />
+              <button type="button" className="btn btn--small" onClick={() => setSharing(true)}>
+                Share to feed
+              </button>
+            </>
+          ) : (
+            <span className="muted">{participantCount} going</span>
+          )}
+        </div>
       </article>
 
       <h2 className="page__subtitle">Posts about this event</h2>
