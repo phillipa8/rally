@@ -57,7 +57,10 @@ function likeCount(postId) {
 }
 
 function repostCount(postId) {
-  return db.prepare('SELECT COUNT(*) AS n FROM reposts WHERE post_id = ?').get(postId).n;
+  return (
+    db.prepare('SELECT COUNT(*) AS n FROM reposts WHERE post_id = ?').get(postId).n +
+    db.prepare('SELECT COUNT(*) AS n FROM posts WHERE quoted_post_id = ?').get(postId).n
+  );
 }
 
 function notifyPostAuthor(post, actorId, type) {

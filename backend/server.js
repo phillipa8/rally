@@ -23,6 +23,7 @@ import bookmarksRouter from './routes/bookmarks.js';
 import categoriesRouter from './routes/categories.js';
 import searchRouter from './routes/search.js';
 import eventsRouter from './routes/events.js';
+import messagesRouter from './routes/messages.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -81,6 +82,7 @@ app.use('/api/bookmarks', bookmarksRouter);            // B
 app.use('/api/categories', categoriesRouter);          // C
 app.use('/api/search', searchRouter);                  // D
 app.use('/api/events', eventsRouter);                  // C
+app.use('/api/messages', messagesRouter);              // D
 
 // --- 404 + central error handler (LAST) ----------------------------------
 app.use(notFound);

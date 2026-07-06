@@ -128,6 +128,20 @@ CREATE TABLE IF NOT EXISTS event_participants (
   FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
 );
 
+-- ============ DIRECT MESSAGES ============
+CREATE TABLE IF NOT EXISTS direct_messages (
+  id           INTEGER PRIMARY KEY,
+  sender_id    INTEGER NOT NULL,
+  recipient_id INTEGER NOT NULL,
+  content      TEXT    NOT NULL,
+  created_at   TEXT    NOT NULL DEFAULT (datetime('now')),
+  read_at      TEXT,
+  FOREIGN KEY (sender_id)    REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE,
+  CHECK (sender_id <> recipient_id),
+  CHECK (length(trim(content)) BETWEEN 1 AND 1000)
+);
+
 -- ============ NOTIFICATIONS (in-app) ============
 CREATE TABLE IF NOT EXISTS notifications (
   id           INTEGER PRIMARY KEY,
@@ -164,6 +178,8 @@ CREATE INDEX IF NOT EXISTS idx_events_start_end      ON events(start_time, end_t
 CREATE INDEX IF NOT EXISTS idx_events_category_start ON events(category_id, start_time);
 CREATE INDEX IF NOT EXISTS idx_events_creator        ON events(creator_id);
 CREATE INDEX IF NOT EXISTS idx_eparts_event          ON event_participants(event_id);
+CREATE INDEX IF NOT EXISTS idx_dms_sender_recipient_created ON direct_messages(sender_id, recipient_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_dms_recipient_created ON direct_messages(recipient_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notifs_recipient_created ON notifications(recipient_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notifs_recipient_unread  ON notifications(recipient_id, is_read);
 

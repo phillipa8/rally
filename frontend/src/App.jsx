@@ -7,6 +7,7 @@ import HomeFeedPage from './pages/HomeFeedPage';
 import ExplorePage from './pages/ExplorePage';
 import BookmarksPage from './pages/BookmarksPage';
 import PostDetailPage from './pages/PostDetailPage';
+import MessagesPage from './pages/MessagesPage';
 import EventsPage from './pages/EventsPage';
 import EventDetailPage from './pages/EventDetailPage';
 import CalendarPage from './pages/CalendarPage';
@@ -59,6 +60,22 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <BookmarksPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="messages"
+              element={
+                <ProtectedRoute>
+                  <MessagesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="messages/:username"
+              element={
+                <ProtectedRoute>
+                  <MessagesPage />
                 </ProtectedRoute>
               }
             />

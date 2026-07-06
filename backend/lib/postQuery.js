@@ -25,7 +25,8 @@ export function postColumns(viewerId) {
       p.quoted_post_id AS quotedPostId, p.media_url AS mediaUrl, p.created_at AS createdAt,
       u.id AS authorId, u.username, u.display_name AS displayName, u.avatar_url AS avatarUrl,
       (SELECT COUNT(*) FROM likes l     WHERE l.post_id = p.id)        AS likeCount,
-      (SELECT COUNT(*) FROM reposts r   WHERE r.post_id = p.id)        AS repostCount,
+      ((SELECT COUNT(*) FROM reposts r  WHERE r.post_id = p.id) +
+       (SELECT COUNT(*) FROM posts qp   WHERE qp.quoted_post_id = p.id)) AS repostCount,
       (SELECT COUNT(*) FROM posts c     WHERE c.parent_post_id = p.id) AS replyCount,
       (SELECT COUNT(*) FROM bookmarks b WHERE b.post_id = p.id)        AS bookmarkCount,
       EXISTS(SELECT 1 FROM likes l     WHERE l.post_id = p.id AND l.user_id = ?) AS likedByMe,

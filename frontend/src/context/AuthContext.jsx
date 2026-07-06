@@ -4,14 +4,30 @@ import { createContext, useContext, useEffect, useState, useCallback, useMemo } 
 import apiClient from '../api/client';
 
 const AuthContext = createContext(null);
+const AUTH_CHANNEL = 'rally-auth';
+const AUTH_STORAGE_KEY = 'rally-auth-event';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true); // initial session probe
   const [authError, setAuthError] = useState(null); // transport failure during the probe
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
+  const publishAuthEvent = useCallback((type) => {
+    const payload = { type, at: Date.now() };
+    try {
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      /* localStorage can be unavailable in private browsing modes */
+    }
+    if ('BroadcastChannel' in window) {
+      const channel = new BroadcastChannel(AUTH_CHANNEL);
+      channel.postMessage(payload);
+      channel.close();
+    }
+  }, []);
+
+  const refresh = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
     setAuthError(null);
     try {
       const res = await apiClient.get('/auth/me');
@@ -24,7 +40,7 @@ export function AuthProvider({ children }) {
         setAuthError('Could not reach the server. Check your connection and try again.');
       }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
@@ -35,31 +51,81 @@ export function AuthProvider({ children }) {
 
   // If any request 401s (e.g. session expired), drop the user.
   useEffect(() => {
-    const onUnauthorized = () => setUser(null);
+    const onUnauthorized = () => {
+      setUser(null);
+      publishAuthEvent('logout');
+    };
     window.addEventListener('auth:unauthorized', onUnauthorized);
     return () => window.removeEventListener('auth:unauthorized', onUnauthorized);
-  }, []);
+  }, [publishAuthEvent]);
+
+  // Keep multiple open tabs in sync when one tab logs in, logs out, or expires.
+  useEffect(() => {
+    const applyAuthEvent = (payload) => {
+      if (!payload?.type) return;
+      if (payload.type === 'logout') {
+        setUser(null);
+        return;
+      }
+      refresh({ silent: true });
+    };
+
+    let channel = null;
+    if ('BroadcastChannel' in window) {
+      channel = new BroadcastChannel(AUTH_CHANNEL);
+      channel.onmessage = (event) => applyAuthEvent(event.data);
+    }
+
+    const onStorage = (event) => {
+      if (event.key !== AUTH_STORAGE_KEY || !event.newValue) return;
+      try {
+        applyAuthEvent(JSON.parse(event.newValue));
+      } catch {
+        /* ignore malformed storage payloads */
+      }
+    };
+
+    const onFocus = () => refresh({ silent: true });
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') refresh({ silent: true });
+    };
+
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      channel?.close();
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [refresh]);
 
   const login = useCallback(async (username, password) => {
     const res = await apiClient.post('/auth/login', { username, password });
     setUser(res.data.user);
+    publishAuthEvent('login');
     return res.data.user;
-  }, []);
+  }, [publishAuthEvent]);
 
   const register = useCallback(async (payload) => {
     const res = await apiClient.post('/auth/register', payload);
     setUser(res.data.user);
+    publishAuthEvent('login');
     return res.data.user;
-  }, []);
+  }, [publishAuthEvent]);
 
   const logout = useCallback(async () => {
     // Clear local auth even if the request fails, so the user is never stuck "logged in".
     try {
       await apiClient.post('/auth/logout');
+    } catch {
+      /* the local logout still wins if the server session was already gone */
     } finally {
       setUser(null);
+      publishAuthEvent('logout');
     }
-  }, []);
+  }, [publishAuthEvent]);
 
   const value = useMemo(
     () => ({
