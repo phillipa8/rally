@@ -9,7 +9,7 @@ import { z } from 'zod';
 import db from '../db/db.js';
 import { validate, validateQuery } from '../middleware/validate.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
-import { visiblePostsWhere } from '../lib/visibility.js';
+import { visibleEventsWhere, visiblePostsWhere } from '../lib/visibility.js';
 import { postColumns, mapPost } from '../lib/postQuery.js';
 
 const router = Router();
@@ -89,14 +89,8 @@ function findEventById(id) {
     .get(id);
 }
 
-// Fetch an event only if its creator is visible to the viewer (i.e. the creator is
-// public, the viewer is the creator, or the viewer is a follower of the
-// private creator). Returns the joined row or undefined. This reuses the shared
-// user-privacy predicate (visiblePostsWhere) applied to the creator alias 'u', so
-// event visibility tracks account privacy exactly like post visibility does.
-
 function findVisibleEvent(id, viewerId) {
-  const v = visiblePostsWhere(viewerId, 'u');
+  const v = visibleEventsWhere(viewerId, 'u');
   return db
     .prepare(
       `SELECT e.*, c.slug AS category_slug, c.name AS category_name,

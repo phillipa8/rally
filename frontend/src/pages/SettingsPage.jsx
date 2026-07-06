@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { useMutation } from '../api/hooks';
 import apiClient from '../api/client';
 import PrivacyToggle from '../components/PrivacyToggle';
-import FollowRequestsPanel from '../components/FollowRequestsPanel';
+import BlockedUsersPanel from '../components/BlockedUsersPanel';
 
 export default function SettingsPage() {
   const { user, refresh } = useAuth();
@@ -63,9 +63,8 @@ export default function SettingsPage() {
       </div>
 
       <div className="card settings__section">
-        <h2 className="settings__heading">Follow requests</h2>
-        {/* Remount when privacy flips: going public auto-accepts pending requests. */}
-        <FollowRequestsPanel key={user?.isPrivate ? 'private' : 'public'} />
+        <h2 className="settings__heading">Blocked users</h2>
+        <BlockedUsersPanel />
       </div>
     </section>
   );

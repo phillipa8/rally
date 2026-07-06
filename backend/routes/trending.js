@@ -8,7 +8,7 @@
 import { Router } from 'express';
 import db from '../db/db.js';
 import { optionalAuth } from '../middleware/auth.js';
-import { visiblePostsWhere } from '../lib/visibility.js';
+import { visibleEventsWhere, visiblePostsWhere } from '../lib/visibility.js';
 
 const router = Router();
 
@@ -39,7 +39,8 @@ router.get('/posts', optionalAuth, (req, res) => {
 // GET /api/trending/events  — events gaining traction in the last 24h,
 // scored by new participants (going/interested) + posts sharing the event.
 // participantCount is the running total; score is the 24h movement only.
-router.get('/events', optionalAuth, (_req, res) => {
+router.get('/events', optionalAuth, (req, res) => {
+  const v = visibleEventsWhere(req.userId, 'u');
   const rows = db
     .prepare(
       `SELECT * FROM (
@@ -57,12 +58,13 @@ router.get('/events', optionalAuth, (_req, res) => {
            FROM events e
            JOIN categories c ON c.id = e.category_id
            JOIN users u ON u.id = e.creator_id
+          WHERE ${v.clause}
        )
        WHERE (newParticipants + shares) > 0
        ORDER BY (newParticipants + shares) DESC, startTime ASC
        LIMIT 20`
     )
-    .all();
+    .all(...v.params);
 
   res.json({ events: rows.map((r) => ({ ...r, score: r.newParticipants + r.shares })) });
 });

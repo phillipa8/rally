@@ -5,6 +5,7 @@
 //   - the author is public, OR
 //   - the viewer is the author, OR
 //   - the viewer is an ACCEPTED follower of the (private) author.
+//   - the author has not blocked the viewer.
 // Unauthenticated viewer (viewerId == null) sees only public authors' posts.
 //
 // Returns { clause, params } to AND into a WHERE. `authorAlias` is the SQL alias
@@ -15,16 +16,32 @@
 //   db.prepare(`SELECT p.* FROM posts p JOIN users u ON u.id = p.author_id
 //               WHERE ${v.clause} ORDER BY p.created_at DESC`).all(...v.params);
 
+export function notBlockedWhere(viewerId, authorAlias = 'u') {
+  if (viewerId == null) return { clause: '1 = 1', params: [] };
+  return {
+    clause:
+      `NOT EXISTS (SELECT 1 FROM blocks bl ` +
+      `WHERE bl.blocker_id = ${authorAlias}.id AND bl.blocked_id = ?)`,
+    params: [viewerId],
+  };
+}
+
 export function visiblePostsWhere(viewerId, authorAlias = 'u') {
   if (viewerId == null) {
     return { clause: `${authorAlias}.is_private = 0`, params: [] };
   }
+  const block = notBlockedWhere(viewerId, authorAlias);
   return {
     clause:
-      `(${authorAlias}.is_private = 0 ` +
+      `(( ${authorAlias}.is_private = 0 ` +
       `OR ${authorAlias}.id = ? ` +
       `OR EXISTS (SELECT 1 FROM follows f ` +
-      `WHERE f.following_id = ${authorAlias}.id AND f.follower_id = ? AND f.status = 'accepted'))`,
-    params: [viewerId, viewerId],
+      `WHERE f.following_id = ${authorAlias}.id AND f.follower_id = ? AND f.status = 'accepted')) ` +
+      `AND ${block.clause})`,
+    params: [viewerId, viewerId, ...block.params],
   };
+}
+
+export function visibleEventsWhere(viewerId, creatorAlias = 'u') {
+  return notBlockedWhere(viewerId, creatorAlias);
 }

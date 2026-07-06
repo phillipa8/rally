@@ -54,11 +54,13 @@ CREATE TABLE IF NOT EXISTS posts (
   content        TEXT    NOT NULL,
   event_id       INTEGER,                          -- nullable: this post shares an event
   parent_post_id INTEGER,                          -- nullable: this post is a reply
+  quoted_post_id INTEGER,                          -- nullable: this post quotes another post
   media_url      TEXT,                             -- nullable: single image
   created_at     TEXT    NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (author_id)      REFERENCES users(id)  ON DELETE CASCADE,
   FOREIGN KEY (event_id)       REFERENCES events(id) ON DELETE SET NULL,
   FOREIGN KEY (parent_post_id) REFERENCES posts(id)  ON DELETE CASCADE,
+  FOREIGN KEY (quoted_post_id) REFERENCES posts(id)  ON DELETE SET NULL,
   CHECK (length(content) <= 280 AND length(trim(content)) > 0)  -- 280 limit + non-empty
 );
 
@@ -72,6 +74,17 @@ CREATE TABLE IF NOT EXISTS follows (
   FOREIGN KEY (follower_id)  REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE,
   CHECK (follower_id <> following_id)
+);
+
+-- ============ BLOCKS ============
+CREATE TABLE IF NOT EXISTS blocks (
+  blocker_id INTEGER NOT NULL,
+  blocked_id INTEGER NOT NULL,
+  created_at TEXT    NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (blocker_id, blocked_id),
+  FOREIGN KEY (blocker_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (blocked_id) REFERENCES users(id) ON DELETE CASCADE,
+  CHECK (blocker_id <> blocked_id)
 );
 
 -- ============ LIKES ============
@@ -115,6 +128,20 @@ CREATE TABLE IF NOT EXISTS event_participants (
   FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
 );
 
+-- ============ DIRECT MESSAGES ============
+CREATE TABLE IF NOT EXISTS direct_messages (
+  id           INTEGER PRIMARY KEY,
+  sender_id    INTEGER NOT NULL,
+  recipient_id INTEGER NOT NULL,
+  content      TEXT    NOT NULL,
+  created_at   TEXT    NOT NULL DEFAULT (datetime('now')),
+  read_at      TEXT,
+  FOREIGN KEY (sender_id)    REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE,
+  CHECK (sender_id <> recipient_id),
+  CHECK (length(trim(content)) BETWEEN 1 AND 1000)
+);
+
 -- ============ NOTIFICATIONS (in-app) ============
 CREATE TABLE IF NOT EXISTS notifications (
   id           INTEGER PRIMARY KEY,
@@ -136,8 +163,10 @@ CREATE TABLE IF NOT EXISTS notifications (
 CREATE INDEX IF NOT EXISTS idx_posts_author_created   ON posts(author_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_posts_parent           ON posts(parent_post_id);
 CREATE INDEX IF NOT EXISTS idx_posts_event            ON posts(event_id);
+CREATE INDEX IF NOT EXISTS idx_posts_quoted           ON posts(quoted_post_id);
 CREATE INDEX IF NOT EXISTS idx_posts_created          ON posts(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_follows_following      ON follows(following_id, status);
+CREATE INDEX IF NOT EXISTS idx_blocks_blocked         ON blocks(blocked_id);
 CREATE INDEX IF NOT EXISTS idx_likes_post            ON likes(post_id);
 CREATE INDEX IF NOT EXISTS idx_likes_created         ON likes(created_at);
 CREATE INDEX IF NOT EXISTS idx_reposts_post          ON reposts(post_id);
@@ -149,6 +178,8 @@ CREATE INDEX IF NOT EXISTS idx_events_start_end      ON events(start_time, end_t
 CREATE INDEX IF NOT EXISTS idx_events_category_start ON events(category_id, start_time);
 CREATE INDEX IF NOT EXISTS idx_events_creator        ON events(creator_id);
 CREATE INDEX IF NOT EXISTS idx_eparts_event          ON event_participants(event_id);
+CREATE INDEX IF NOT EXISTS idx_dms_sender_recipient_created ON direct_messages(sender_id, recipient_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_dms_recipient_created ON direct_messages(recipient_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notifs_recipient_created ON notifications(recipient_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notifs_recipient_unread  ON notifications(recipient_id, is_read);
 
