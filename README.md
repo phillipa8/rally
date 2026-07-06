@@ -74,9 +74,17 @@ Open **http://localhost:5173**.
 See `backend/README.md` for full API documentation and `frontend/README.md` for the component map.
 
 ## Live deployment
-- **Live URL:** _TBD_ — add here once deployed.
-- Backend → **Render**, frontend → **Vercel**. Config is committed (`render.yaml`,
-  `frontend/vercel.json`); see **[DEPLOYMENT.md](./DEPLOYMENT.md)** for the step-by-step guide.
+- **Live URL:** **https://rally-bay.vercel.app**
+- Frontend → **Vercel** (`https://rally-bay.vercel.app`); backend API → **Render**
+  (`https://rally-api-xwg8.onrender.com`). The Vercel app proxies `/api/*` to the Render
+  service (see `frontend/vercel.json`), so the browser treats the API as first-party and the
+  session cookie works without third-party-cookie issues.
+- **Note (free tier):** the Render backend sleeps after ~15 min of inactivity, so the first
+  request after idle takes ~50s to wake. Open the live URL a minute before demoing to warm it up.
+  The free instance has no persistent disk, so accounts/posts/uploads reset on each
+  restart/redeploy — register a fresh account during the demo.
+- Config is committed (`render.yaml`, `frontend/vercel.json`); see
+  **[DEPLOYMENT.md](./DEPLOYMENT.md)** for the step-by-step guide.
 
 ## Team
 4-member group project. Internal task ownership is tracked separately (shared within the
