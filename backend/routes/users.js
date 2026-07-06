@@ -281,7 +281,13 @@ router.get('/:username/followers', optionalAuth, (req, res) => {
     )
     .all(target.id);
 
-  res.json({ users: rows.map(publicUser) });
+  res.json({
+    users: rows.map((u) => ({
+      ...publicUser(u),
+      followStatus: followStatus(req.userId, u.id), // viewer -> this user (null if logged out / self)
+      isMe: req.userId === u.id,
+    })),
+  });
 });
 
 // GET /api/users/:username/following  — accounts this user follows (accepted).
@@ -301,7 +307,13 @@ router.get('/:username/following', optionalAuth, (req, res) => {
     )
     .all(target.id);
 
-  res.json({ users: rows.map(publicUser) });
+  res.json({
+    users: rows.map((u) => ({
+      ...publicUser(u),
+      followStatus: followStatus(req.userId, u.id), // viewer -> this user (null if logged out / self)
+      isMe: req.userId === u.id,
+    })),
+  });
 });
 
 // Insert an in-app notification. The notifications router (Member A) reads these.

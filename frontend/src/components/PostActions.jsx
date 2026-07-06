@@ -14,13 +14,15 @@ const KIND = {
 };
 
 export default function PostActions({ post, onChange }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const [quoteOpen, setQuoteOpen] = useState(false);
   const { mutate, loading } = useMutation(({ kind, wasOn }) => {
     const url = `/posts/${post.id}/${kind}`;
     return wasOn ? apiClient.delete(url) : apiClient.post(url);
   });
+  const del = useMutation(() => apiClient.delete(`/posts/${post.id}`));
+  const isOwner = user?.id != null && user.id === post.author?.id;
   const [s, setS] = useState({
     liked: !!post.likedByMe,
     likeCount: post.likeCount ?? 0,
@@ -71,6 +73,17 @@ export default function PostActions({ post, onChange }) {
     setQuoteOpen(true);
   }
 
+  async function handleDelete() {
+    if (del.loading) return;
+    if (!window.confirm('Delete this post? This cannot be undone.')) return;
+    try {
+      await del.mutate();
+      onChange?.(); // parent refetches -> the post drops out of the list
+    } catch {
+      /* del.error is shown inline */
+    }
+  }
+
   return (
     <>
       <div className="post-actions" aria-busy={loading}>
@@ -107,8 +120,21 @@ export default function PostActions({ post, onChange }) {
         >
           {s.bookmarked ? '🔖' : '🏷️'}
         </button>
-        {loading && <span className="post-actions__status">Saving...</span>}
-        {s.error && <span className="post-actions__error" role="alert">{s.error}</span>}
+        {isOwner && (
+          <button
+            type="button"
+            className="post-action post-action--delete"
+            title="Delete post"
+            onClick={handleDelete}
+            disabled={del.loading}
+          >
+            🗑️
+          </button>
+        )}
+        {(loading || del.loading) && <span className="post-actions__status">Saving...</span>}
+        {(s.error || del.error) && (
+          <span className="post-actions__error" role="alert">{s.error || del.error}</span>
+        )}
       </div>
 
       <Modal open={quoteOpen} onClose={() => setQuoteOpen(false)} title="Quote post">
