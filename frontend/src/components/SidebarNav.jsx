@@ -7,7 +7,6 @@ const ITEMS = [
   { to: '/', label: 'Home', icon: '🏠', end: true },
   { to: '/explore', label: 'Explore', icon: '🔭' },
   { to: '/messages', label: 'DMs', icon: '✉️', auth: true },
-  { to: '/calendar', label: 'Calendar', icon: '📅' },
   { to: '/events', label: 'Events', icon: '🎉' },
   { to: '/search', label: 'Search', icon: '🔍' },
   { to: '/trending', label: 'Trending', icon: '🔥' },

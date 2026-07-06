@@ -209,6 +209,39 @@ router.get('/me/participating', requireAuth, (req, res) => {
   res.json({ events: rows.map((r) => ({ ...publicEvent(r), myStatus: r.my_status })) });
 });
 
+// Discovery feed for the events hub: not-yet-ended events, either soonest-first
+// ('upcoming', default) or by most participants ('popular').
+const discoverQuerySchema = z.object({
+  sort: z.enum(['upcoming', 'popular']).optional(),
+});
+
+// GET /api/events/discover?sort=upcoming|popular — up to 10 upcoming events visible
+// to the viewer. Registered before /:id so "discover" is never treated as an event id.
+// Uses the same visibility predicate as the calendar list so the events page agrees.
+router.get('/discover', optionalAuth, validateQuery(discoverQuerySchema), (req, res) => {
+  const sort = req.validatedQuery.sort || 'upcoming';
+  // ORDER BY is chosen from the validated enum (never interpolated user input).
+  const order =
+    sort === 'popular' ? 'participant_count DESC, e.start_time ASC' : 'e.start_time ASC';
+  const v = visiblePostsWhere(req.userId, 'u');
+  const rows = db
+    .prepare(
+      `SELECT e.*, c.slug AS category_slug, c.name AS category_name,
+              u.username AS creator_username, u.display_name AS creator_display_name,
+              u.avatar_url AS creator_avatar_url,
+              (SELECT COUNT(*) FROM event_participants ep
+                WHERE ep.event_id = e.id AND ep.status != 'not_going') AS participant_count
+         FROM events e
+         JOIN categories c ON c.id = e.category_id
+         JOIN users u ON u.id = e.creator_id
+        WHERE e.end_time >= datetime('now') AND ${v.clause}
+        ORDER BY ${order}
+        LIMIT 10`
+    )
+    .all(...v.params);
+  res.json({ events: rows.map((r) => ({ ...publicEvent(r), participantCount: r.participant_count })) });
+});
+
 // GET /api/events/:id — one event + participant count, viewer's participation,
 // and the visibility-gated posts that share this event (relatedPosts).
 // A private creator's event returns 404 for viewers who aren't the creator or an accepted

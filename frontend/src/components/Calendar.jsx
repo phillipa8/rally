@@ -1,20 +1,20 @@
-// CalendarPage.jsx — month calendar of events with a category filter (Owner: Member C).
-// On desktop it shows the 7 column grid, mobile falls back to an agenda list (CSS-toggled).
-// Days the viewer is participating in are displayed highlighted.
+// Calendar.jsx — reusable month calendar module consisting of events with a category filter (Owner: Member C).
+// Embeddable (no page chrome): its own month toolbar + filter, a 7 column grid on desktop
+// and an agenda list on mobile (CSS-toggled). Highlights days the viewer is attending.
 
 import { useState, useMemo } from 'react';
 import dayjs from 'dayjs';
 import { useApi } from '../api/hooks';
 import { useAuth } from '../context/AuthContext';
 import { formatDate } from '../lib/time';
-import CategoryFilterBar from '../components/CategoryFilterBar';
-import CalendarGrid from '../components/CalendarGrid';
-import EventCard from '../components/EventCard';
-import LoadingState from '../components/LoadingState';
-import ErrorState from '../components/ErrorState';
-import EmptyState from '../components/EmptyState';
+import CategoryFilterBar from './CategoryFilterBar';
+import CalendarGrid from './CalendarGrid';
+import EventCard from './EventCard';
+import LoadingState from './LoadingState';
+import ErrorState from './ErrorState';
+import EmptyState from './EmptyState';
 
-export default function CalendarPage() {
+export default function Calendar() {
   const { isAuthenticated } = useAuth();
   const [month, setMonth] = useState(() => dayjs().startOf('month'));
   const [category, setCategory] = useState(null);
@@ -50,9 +50,9 @@ export default function CalendarPage() {
   const today = dayjs().format('YYYY-MM-DD');
 
   return (
-    <section className="page">
-      <div className="page__header">
-        <h1 className="page__title">Calendar</h1>
+    <div className="calendar">
+      <div className="cal-toolbar">
+        <h2 className="cal-month">{month.format('MMMM YYYY')}</h2>
         <div className="cal-nav">
           <button
             type="button"
@@ -80,7 +80,6 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      <h2 className="cal-month">{month.format('MMMM YYYY')}</h2>
       <CategoryFilterBar value={category} onChange={setCategory} />
 
       {loading && <LoadingState label="Loading events…" />}
@@ -106,6 +105,6 @@ export default function CalendarPage() {
           </div>
         </>
       )}
-    </section>
+    </div>
   );
 }
