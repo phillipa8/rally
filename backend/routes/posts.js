@@ -22,6 +22,15 @@ const createPostSchema = z.object({
   mediaUrl: z.string().trim().max(500).optional(),
 });
 
+const quotePostSchema = z.object({
+  content: z
+    .string()
+    .trim()
+    .min(1, 'Quote cannot be empty')
+    .max(280, 'Quote must be at most 280 characters'),
+  mediaUrl: z.string().trim().max(500).optional(),
+});
+
 // Fetch one fully-serialized post by id (no visibility gate — caller decides).
 function getPostById(id, viewerId) {
   const { columns, viewerParams } = postColumns(viewerId);
@@ -204,9 +213,23 @@ router.delete('/:id/repost', requireAuth, (req, res) => {
   res.status(204).end();
 });
 
+// POST /api/posts/:id/quote — create a new post that quotes a visible post.
+router.post('/:id/quote', requireAuth, validate(quotePostSchema), (req, res) => {
+  const quotedPost = getVisiblePostForAction(req.params.id, req.userId);
+  if (!quotedPost) return res.status(404).json({ error: 'Post not found' });
+
+  const { content, mediaUrl } = req.body;
+  const info = db
+    .prepare('INSERT INTO posts (author_id, content, quoted_post_id, media_url) VALUES (?, ?, ?, ?)')
+    .run(req.userId, content, quotedPost.id, mediaUrl ?? null);
+
+  notifyPostAuthor(quotedPost, req.userId, 'repost');
+  res.status(201).json({ post: getPostById(info.lastInsertRowid, req.userId) });
+});
+
 // POST /api/posts/:id/bookmark — save a post (idempotent).
 router.post('/:id/bookmark', requireAuth, (req, res) => {
-  const post = db.prepare('SELECT id FROM posts WHERE id = ?').get(req.params.id);
+  const post = getVisiblePostForAction(req.params.id, req.userId);
   if (!post) return res.status(404).json({ error: 'Post not found' });
   db.prepare('INSERT OR IGNORE INTO bookmarks (user_id, post_id) VALUES (?, ?)').run(req.userId, post.id);
   res.status(201).json({ bookmarked: true });
@@ -214,7 +237,7 @@ router.post('/:id/bookmark', requireAuth, (req, res) => {
 
 // DELETE /api/posts/:id/bookmark — remove a saved post (idempotent).
 router.delete('/:id/bookmark', requireAuth, (req, res) => {
-  const post = db.prepare('SELECT id FROM posts WHERE id = ?').get(req.params.id);
+  const post = getVisiblePostForAction(req.params.id, req.userId);
   if (!post) return res.status(404).json({ error: 'Post not found' });
   db.prepare('DELETE FROM bookmarks WHERE user_id = ? AND post_id = ?').run(req.userId, post.id);
   res.status(204).end();

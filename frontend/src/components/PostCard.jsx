@@ -6,6 +6,7 @@ import { fromNow } from '../lib/time';
 import Avatar from './Avatar';
 import PostActions from './PostActions';
 import EventChip from './EventChip';
+import QuotedPostPreview from './QuotedPostPreview';
 
 export default function PostCard({ post, onChange }) {
   if (!post) return null;
@@ -42,6 +43,8 @@ export default function PostCard({ post, onChange }) {
           <img className="post__media" src={post.mediaUrl} alt="attachment" loading="lazy" />
         </Link>
       )}
+
+      {post.quotedPost && <QuotedPostPreview post={post.quotedPost} />}
 
       {/* EventChip slot (Member C): shown when the post shares an event. */}
       {post.eventId && <EventChip eventId={post.eventId} />}

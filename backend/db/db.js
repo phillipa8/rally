@@ -12,8 +12,29 @@ const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
+function hasColumn(table, column) {
+  return db.prepare(`PRAGMA table_info(${table})`).all().some((row) => row.name === column);
+}
+
+// Pre-migrate older app.db files before schema.sql creates indexes that depend
+// on new columns. Fresh databases skip this because the posts table is not there.
+if (!hasColumn('posts', 'quoted_post_id')) {
+  const postsTableExists = db
+    .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'posts'")
+    .get();
+  if (postsTableExists) {
+    db.prepare(
+      'ALTER TABLE posts ADD COLUMN quoted_post_id INTEGER REFERENCES posts(id) ON DELETE SET NULL'
+    ).run();
+  }
+}
+
 // Apply the schema (idempotent — every statement uses IF NOT EXISTS / OR IGNORE).
 const schema = fs.readFileSync(path.join(import.meta.dirname, 'schema.sql'), 'utf8');
 db.exec(schema);
+
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_posts_quoted ON posts(quoted_post_id);
+`);
 
 export default db;

@@ -48,15 +48,22 @@ export default function FollowButton({ username, initialStatus = null, onChange 
   };
 
   return (
-    <button
-      type="button"
-      className={`btn btn--small ${status ? 'btn--ghost' : ''}`}
-      onClick={onClick}
-      disabled={loading}
-      aria-pressed={!!status}
-      title={error || undefined}
-    >
-      {label}
-    </button>
+    <span className="follow-control">
+      <button
+        type="button"
+        className={`btn btn--small ${status ? 'btn--ghost' : ''}`}
+        onClick={onClick}
+        disabled={loading}
+        aria-pressed={!!status}
+        title={error || undefined}
+      >
+        {label}
+      </button>
+      {error && (
+        <span className="follow-control__error" role="alert">
+          {error}
+        </span>
+      )}
+    </span>
   );
 }

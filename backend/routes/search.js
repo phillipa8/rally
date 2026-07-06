@@ -5,7 +5,7 @@ import { z } from 'zod';
 import db from '../db/db.js';
 import { optionalAuth } from '../middleware/auth.js';
 import { validateQuery } from '../middleware/validate.js';
-import { visiblePostsWhere } from '../lib/visibility.js';
+import { visibleEventsWhere, visiblePostsWhere } from '../lib/visibility.js';
 import { postColumns, mapPost } from '../lib/postQuery.js';
 
 const router = Router();
@@ -99,9 +99,10 @@ function searchPostsLike(q, viewerId) {
   return rows.map(mapPost);
 }
 
-function searchEventsFts(q) {
+function searchEventsFts(q, viewerId) {
   const match = ftsQuery(q);
   if (!match) return [];
+  const v = visibleEventsWhere(viewerId, 'u');
   const rows = db
     .prepare(
       `SELECT e.id, e.title, e.description, e.location,
@@ -115,16 +116,17 @@ function searchEventsFts(q) {
          JOIN events e ON e.id = events_fts.rowid
          JOIN categories c ON c.id = e.category_id
          JOIN users u ON u.id = e.creator_id
-        WHERE events_fts MATCH ?
+        WHERE events_fts MATCH ? AND ${v.clause}
         ORDER BY bm25(events_fts), e.start_time ASC
         LIMIT 50`
     )
-    .all(match);
+    .all(match, ...v.params);
   return rows.map(eventFromRow);
 }
 
-function searchEventsLike(q) {
+function searchEventsLike(q, viewerId) {
   const pattern = likePattern(q);
+  const v = visibleEventsWhere(viewerId, 'u');
   const rows = db
     .prepare(
       `SELECT e.id, e.title, e.description, e.location,
@@ -137,15 +139,16 @@ function searchEventsLike(q) {
          FROM events e
          JOIN categories c ON c.id = e.category_id
          JOIN users u ON u.id = e.creator_id
-        WHERE e.title LIKE ? ESCAPE '\\'
+        WHERE (${v.clause})
+          AND (e.title LIKE ? ESCAPE '\\'
            OR e.description LIKE ? ESCAPE '\\'
            OR e.location LIKE ? ESCAPE '\\'
            OR c.name LIKE ? ESCAPE '\\'
-           OR c.slug LIKE ? ESCAPE '\\'
+           OR c.slug LIKE ? ESCAPE '\\')
         ORDER BY e.start_time ASC, e.id ASC
         LIMIT 50`
     )
-    .all(pattern, pattern, pattern, pattern, pattern);
+    .all(...v.params, pattern, pattern, pattern, pattern, pattern);
   return rows.map(eventFromRow);
 }
 
@@ -216,11 +219,11 @@ router.get('/events', optionalAuth, validateQuery(searchQuerySchema), (req, res)
   const { q } = req.validatedQuery;
   let events = [];
   try {
-    events = searchEventsFts(q);
+    events = searchEventsFts(q, req.userId);
   } catch (_err) {
     events = [];
   }
-  events = mergeById(events, searchEventsLike(q));
+  events = mergeById(events, searchEventsLike(q, req.userId));
   res.json({ events });
 });
 

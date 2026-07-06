@@ -4,22 +4,24 @@ import { Router } from 'express';
 import db from '../db/db.js';
 import { requireAuth } from '../middleware/auth.js';
 import { postColumns, mapPost } from '../lib/postQuery.js';
+import { visiblePostsWhere } from '../lib/visibility.js';
 
 const router = Router();
 
 // GET /api/bookmarks — your saved posts, most recently bookmarked first.
 router.get('/', requireAuth, (req, res) => {
   const { columns, viewerParams } = postColumns(req.userId);
+  const v = visiblePostsWhere(req.userId);
   const rows = db
     .prepare(
       `SELECT ${columns}, b.created_at AS bookmarkedAt
          FROM bookmarks b
          JOIN posts p ON p.id = b.post_id
          JOIN users u ON u.id = p.author_id
-        WHERE b.user_id = ?
+        WHERE b.user_id = ? AND ${v.clause}
         ORDER BY b.created_at DESC`
     )
-    .all(...viewerParams, req.userId);
+    .all(...viewerParams, req.userId, ...v.params);
   res.json({ posts: rows.map(mapPost) });
 });
 

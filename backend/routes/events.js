@@ -9,7 +9,7 @@ import { z } from 'zod';
 import db from '../db/db.js';
 import { validate } from '../middleware/validate.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
-import { visiblePostsWhere } from '../lib/visibility.js';
+import { visibleEventsWhere, visiblePostsWhere } from '../lib/visibility.js';
 import { postColumns, mapPost } from '../lib/postQuery.js';
 
 const router = Router();
@@ -87,6 +87,21 @@ function findEventById(id) {
     .get(id);
 }
 
+function findVisibleEventById(id, viewerId) {
+  const v = visibleEventsWhere(viewerId, 'u');
+  return db
+    .prepare(
+      `SELECT e.*, c.slug AS category_slug, c.name AS category_name,
+              u.username AS creator_username, u.display_name AS creator_display_name,
+              u.avatar_url AS creator_avatar_url
+         FROM events e
+         JOIN categories c ON c.id = e.category_id
+         JOIN users u ON u.id = e.creator_id
+        WHERE e.id = ? AND ${v.clause}`
+    )
+    .get(id, ...v.params);
+}
+
 // POST /api/events — create an event (the creator is the logged-in user).
 router.post('/', requireAuth, validate(createEventSchema), (req, res) => {
   const { title, description, categoryId, startTime, endTime, location, ageRestriction } = req.body;
@@ -120,7 +135,7 @@ router.post('/', requireAuth, validate(createEventSchema), (req, res) => {
 // GET /api/events/:id — one event + participant count, viewer's participation,
 // and the visibility-gated posts that share this event (relatedPosts).
 router.get('/:id', optionalAuth, (req, res) => {
-  const row = findEventById(req.params.id);
+  const row = findVisibleEventById(req.params.id, req.userId);
   if (!row) return res.status(404).json({ error: 'Event not found' });
 
   const participantCount = db

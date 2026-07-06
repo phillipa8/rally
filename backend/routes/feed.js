@@ -3,7 +3,7 @@ import { Router } from 'express';
 import db from '../db/db.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { postColumns, mapPost } from '../lib/postQuery.js';
-import { visiblePostsWhere } from '../lib/visibility.js';
+import { notBlockedWhere, visiblePostsWhere } from '../lib/visibility.js';
 
 const router = Router();
 
@@ -21,6 +21,7 @@ router.get('/', requireAuth, (req, res) => {
        AND (p.author_id = ?
             OR p.author_id IN (SELECT following_id FROM follows
                                 WHERE follower_id = ? AND status = 'accepted'))
+       AND ${v.clause}
     UNION ALL
     SELECT ${columns}, rp.created_at AS sortTime, ru.username AS repostedBy
       FROM reposts rp
@@ -34,7 +35,7 @@ router.get('/', requireAuth, (req, res) => {
      ORDER BY sortTime DESC
      LIMIT 100`;
   const params = [
-    ...viewerParams, req.userId, req.userId, // first branch
+    ...viewerParams, req.userId, req.userId, ...v.params, // first branch
     ...viewerParams, req.userId, req.userId, ...v.params, // second branch
   ];
   const rows = db.prepare(sql).all(...params);
@@ -45,15 +46,16 @@ router.get('/', requireAuth, (req, res) => {
 // Visitors (and logged-in users) can browse without following anyone.
 router.get('/explore', optionalAuth, (req, res) => {
   const { columns, viewerParams } = postColumns(req.userId);
+  const block = notBlockedWhere(req.userId, 'u');
   const rows = db
     .prepare(
       `SELECT ${columns}
          FROM posts p JOIN users u ON u.id = p.author_id
-        WHERE p.parent_post_id IS NULL AND u.is_private = 0
+        WHERE p.parent_post_id IS NULL AND u.is_private = 0 AND ${block.clause}
         ORDER BY p.created_at DESC, p.id DESC
         LIMIT 100`
     )
-    .all(...viewerParams);
+    .all(...viewerParams, ...block.params);
   res.json({ posts: rows.map(mapPost) });
 });
 

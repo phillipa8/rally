@@ -4,9 +4,16 @@
 import { Link } from 'react-router-dom';
 import Avatar from './Avatar';
 import FollowButton from './FollowButton';
+import BlockButton from './BlockButton';
 
-export default function ProfileHeader({ profile, onOpenFollowers, onOpenFollowing }) {
-  const { user, counts, isMe, followStatus } = profile;
+export default function ProfileHeader({
+  profile,
+  onOpenFollowers,
+  onOpenFollowing,
+  onOpenRequests,
+  onChange,
+}) {
+  const { user, counts, isMe, followStatus, blockedByMe } = profile;
 
   return (
     <header className="profile">
@@ -16,7 +23,12 @@ export default function ProfileHeader({ profile, onOpenFollowers, onOpenFollowin
           {isMe ? (
             <Link to="/settings" className="btn btn--small btn--ghost">Edit profile</Link>
           ) : (
-            <FollowButton username={user.username} initialStatus={followStatus} />
+            <>
+              {!blockedByMe && (
+                <FollowButton username={user.username} initialStatus={followStatus} onChange={onChange} />
+              )}
+              <BlockButton username={user.username} initialBlocked={blockedByMe} onChange={onChange} />
+            </>
           )}
         </div>
       </div>
@@ -46,6 +58,12 @@ export default function ProfileHeader({ profile, onOpenFollowers, onOpenFollowin
           <dt className="stat__label">Following</dt>
           <dd className="stat__value">{counts.following}</dd>
         </button>
+        {isMe && (
+          <button type="button" className="stat stat--button" onClick={onOpenRequests}>
+            <dt className="stat__label">Requests</dt>
+            <dd className="stat__value">{counts.requests ?? 0}</dd>
+          </button>
+        )}
       </dl>
     </header>
   );

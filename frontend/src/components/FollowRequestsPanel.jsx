@@ -11,7 +11,7 @@ import LoadingState from './LoadingState';
 import ErrorState from './ErrorState';
 import EmptyState from './EmptyState';
 
-export default function FollowRequestsPanel() {
+export default function FollowRequestsPanel({ onChange }) {
   const { data, loading, error, refetch } = useApi('/follow-requests');
   const [requests, setRequests] = useState([]);
   const { mutate: act, loading: acting } = useMutation((id, decision) =>
@@ -27,6 +27,7 @@ export default function FollowRequestsPanel() {
     setRequests((r) => r.filter((u) => u.id !== id)); // optimistic remove
     try {
       await act(id, decision);
+      onChange?.();
     } catch {
       setRequests(prev); // restore on failure
     }

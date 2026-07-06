@@ -54,11 +54,13 @@ CREATE TABLE IF NOT EXISTS posts (
   content        TEXT    NOT NULL,
   event_id       INTEGER,                          -- nullable: this post shares an event
   parent_post_id INTEGER,                          -- nullable: this post is a reply
+  quoted_post_id INTEGER,                          -- nullable: this post quotes another post
   media_url      TEXT,                             -- nullable: single image
   created_at     TEXT    NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (author_id)      REFERENCES users(id)  ON DELETE CASCADE,
   FOREIGN KEY (event_id)       REFERENCES events(id) ON DELETE SET NULL,
   FOREIGN KEY (parent_post_id) REFERENCES posts(id)  ON DELETE CASCADE,
+  FOREIGN KEY (quoted_post_id) REFERENCES posts(id)  ON DELETE SET NULL,
   CHECK (length(content) <= 280 AND length(trim(content)) > 0)  -- 280 limit + non-empty
 );
 
@@ -72,6 +74,17 @@ CREATE TABLE IF NOT EXISTS follows (
   FOREIGN KEY (follower_id)  REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE,
   CHECK (follower_id <> following_id)
+);
+
+-- ============ BLOCKS ============
+CREATE TABLE IF NOT EXISTS blocks (
+  blocker_id INTEGER NOT NULL,
+  blocked_id INTEGER NOT NULL,
+  created_at TEXT    NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (blocker_id, blocked_id),
+  FOREIGN KEY (blocker_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (blocked_id) REFERENCES users(id) ON DELETE CASCADE,
+  CHECK (blocker_id <> blocked_id)
 );
 
 -- ============ LIKES ============
@@ -136,8 +149,10 @@ CREATE TABLE IF NOT EXISTS notifications (
 CREATE INDEX IF NOT EXISTS idx_posts_author_created   ON posts(author_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_posts_parent           ON posts(parent_post_id);
 CREATE INDEX IF NOT EXISTS idx_posts_event            ON posts(event_id);
+CREATE INDEX IF NOT EXISTS idx_posts_quoted           ON posts(quoted_post_id);
 CREATE INDEX IF NOT EXISTS idx_posts_created          ON posts(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_follows_following      ON follows(following_id, status);
+CREATE INDEX IF NOT EXISTS idx_blocks_blocked         ON blocks(blocked_id);
 CREATE INDEX IF NOT EXISTS idx_likes_post            ON likes(post_id);
 CREATE INDEX IF NOT EXISTS idx_likes_created         ON likes(created_at);
 CREATE INDEX IF NOT EXISTS idx_reposts_post          ON reposts(post_id);

@@ -8,16 +8,20 @@ import { useAuth } from '../context/AuthContext';
 import { useApi } from '../api/hooks';
 import ProfileHeader from '../components/ProfileHeader';
 import FollowListModal from '../components/FollowListModal';
+import FollowRequestsPanel from '../components/FollowRequestsPanel';
+import Modal from '../components/Modal';
 import LoadingState from '../components/LoadingState';
 import ErrorState from '../components/ErrorState';
 import EmptyState from '../components/EmptyState';
 import PostList from '../components/PostList';
+import EventCard from '../components/EventCard';
 
 export default function ProfilePage() {
   const { username } = useParams();
   const { user } = useAuth();
   const handle = username || user?.username; // "/profile" falls back to the logged-in user
   const [listTab, setListTab] = useState(null); // 'followers' | 'following' | null
+  const [requestsOpen, setRequestsOpen] = useState(false);
   const [activityTab, setActivityTab] = useState('posts');
 
   const { data, loading, error, refetch } = useApi(`/users/${handle}`, [handle], {
@@ -33,6 +37,9 @@ export default function ProfilePage() {
   });
   const likes = useApi(`/users/${handle}/likes`, [handle, activityTab], {
     enabled: canLoadActivity && activityTab === 'likes',
+  });
+  const events = useApi(`/users/${handle}/events`, [handle, activityTab], {
+    enabled: canLoadActivity && activityTab === 'events',
   });
 
   useEffect(() => {
@@ -53,9 +60,14 @@ export default function ProfilePage() {
         profile={profile}
         onOpenFollowers={() => setListTab('followers')}
         onOpenFollowing={() => setListTab('following')}
+        onOpenRequests={() => setRequestsOpen(true)}
+        onChange={refetch}
       />
 
       <FollowListModal username={handle} tab={listTab} onClose={() => setListTab(null)} />
+      <Modal open={requestsOpen} onClose={() => setRequestsOpen(false)} title="Follow requests">
+        <FollowRequestsPanel onChange={refetch} />
+      </Modal>
 
       {isLocked ? (
         <div className="profile__posts">
@@ -85,6 +97,15 @@ export default function ProfilePage() {
             >
               Likes
             </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activityTab === 'events'}
+              className={`tab ${activityTab === 'events' ? 'tab--active' : ''}`}
+              onClick={() => setActivityTab('events')}
+            >
+              Events
+            </button>
           </div>
 
           <div className="profile__posts">
@@ -97,7 +118,7 @@ export default function ProfilePage() {
                 onChange={posts.refetch}
                 emptyTitle="No posts yet"
               />
-            ) : (
+            ) : activityTab === 'likes' ? (
               <PostList
                 posts={likes.data?.posts}
                 loading={likes.loading}
@@ -107,6 +128,22 @@ export default function ProfilePage() {
                 emptyTitle="No liked posts yet"
                 emptyHint="Posts this user likes will show up here."
               />
+            ) : events.loading ? (
+              <LoadingState label="Loading events..." />
+            ) : events.error ? (
+              <ErrorState message={events.error} onRetry={events.refetch} />
+            ) : !events.data?.events?.length ? (
+              <EmptyState title="No hosted events yet" />
+            ) : (
+              <div className="post-list">
+                {events.data.events.map((event) => (
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    participantCount={event.participantCount}
+                  />
+                ))}
+              </div>
             )}
           </div>
         </>
