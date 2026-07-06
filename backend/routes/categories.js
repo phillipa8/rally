@@ -7,6 +7,7 @@ import { Router } from 'express';
 import db from '../db/db.js';
 import { optionalAuth } from '../middleware/auth.js';
 import { visiblePostsWhere } from '../lib/visibility.js';
+import { postColumns, mapPost } from '../lib/postQuery.js';
 
 const router = Router();
 
@@ -26,21 +27,22 @@ router.get('/:slug/posts', optionalAuth, (req, res) => {
     .get(req.params.slug);
   if (!category) return res.status(404).json({ error: 'Category not found' });
 
-  const v = visiblePostsWhere(req.userId); // predicate over author alias "u"
+  // Use the shared serializer so these cards carry full engagement counts + viewer
+  // flags (like/repost/bookmark) and render EventChip, consistent with the feed.
+  const { columns, viewerParams } = postColumns(req.userId);
+  const v = visiblePostsWhere(req.userId, 'u');
   const posts = db
     .prepare(
-      `SELECT p.id, p.content, p.media_url AS mediaUrl, p.created_at AS createdAt,
-              u.username, u.display_name AS displayName, u.avatar_url AS avatarUrl,
-              e.id AS eventId, e.title AS eventTitle, e.start_time AS eventStartTime
+      `SELECT ${columns}
          FROM posts p
-         JOIN events e ON e.id = p.event_id
          JOIN users u ON u.id = p.author_id
+         JOIN events e ON e.id = p.event_id
         WHERE e.category_id = ? AND ${v.clause}
-        ORDER BY p.created_at DESC
+        ORDER BY p.created_at DESC, p.id DESC
         LIMIT 50`
     )
-    .all(category.id, ...v.params);
+    .all(...viewerParams, category.id, ...v.params);
 
-  res.json({ category, posts });
+  res.json({ category, posts: posts.map(mapPost) });
 });
 export default router;
