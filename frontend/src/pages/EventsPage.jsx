@@ -1,9 +1,8 @@
-// EventsPage.jsx — events hub or entry point for creating events (Owner: Member C).
-// An explorable month calendar will be implemented later in step 5. For now this page hosts the
-// "New event" flow and each created event links out to its detail page.
+// EventsPage.jsx — events hub (Owner: Member C). Entry point for creating an event
+// and a jumping off point to the month calendar, where events are browsed.
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Modal from '../components/Modal';
 import EventForm from '../components/EventForm';
@@ -18,19 +17,24 @@ export default function EventsPage() {
     <section className="page">
       <div className="page__header">
         <h1 className="page__title">Events</h1>
-        {isAuthenticated && (
-          <button type="button" className="btn" onClick={() => setCreating(true)}>
-            ＋ New event
-          </button>
-        )}
+        <div className="page__actions">
+          <Link to="/calendar" className="btn btn--ghost">
+            View calendar
+          </Link>
+          {isAuthenticated && (
+            <button type="button" className="btn" onClick={() => setCreating(true)}>
+              ＋ New event
+            </button>
+          )}
+        </div>
       </div>
 
       <EmptyState
         title="Browse events on the calendar"
         hint={
           isAuthenticated
-            ? 'Create an event to get started. The calendar view is coming soon.'
-            : 'Log in to create events.'
+            ? 'Create an event, or open the calendar to see what’s coming up.'
+            : 'Log in to create events, or open the calendar to browse.'
         }
       />
 
