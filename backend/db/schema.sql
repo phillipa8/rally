@@ -159,7 +159,30 @@ CREATE TABLE IF NOT EXISTS notifications (
   FOREIGN KEY (event_id)     REFERENCES events(id) ON DELETE CASCADE
 );
 
+-- ============ POLLS (a post is a poll when it has options) ============
+CREATE TABLE IF NOT EXISTS poll_options (
+  id       INTEGER PRIMARY KEY,
+  post_id  INTEGER NOT NULL,
+  position INTEGER NOT NULL,
+  text     TEXT    NOT NULL,
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+  CHECK (length(trim(text)) BETWEEN 1 AND 80)
+);
+
+CREATE TABLE IF NOT EXISTS poll_votes (
+  post_id    INTEGER NOT NULL,
+  user_id    INTEGER NOT NULL,
+  option_id  INTEGER NOT NULL,
+  created_at TEXT    NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (post_id, user_id),          -- one vote per user per poll
+  FOREIGN KEY (post_id)   REFERENCES posts(id)        ON DELETE CASCADE,
+  FOREIGN KEY (user_id)   REFERENCES users(id)        ON DELETE CASCADE,
+  FOREIGN KEY (option_id) REFERENCES poll_options(id) ON DELETE CASCADE
+);
+
 -- ============ INDEXES (hot queries) ============
+CREATE INDEX IF NOT EXISTS idx_poll_options_post ON poll_options(post_id, position);
+CREATE INDEX IF NOT EXISTS idx_poll_votes_option ON poll_votes(option_id);
 CREATE INDEX IF NOT EXISTS idx_posts_author_created   ON posts(author_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_posts_parent           ON posts(parent_post_id);
 CREATE INDEX IF NOT EXISTS idx_posts_event            ON posts(event_id);

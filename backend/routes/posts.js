@@ -7,7 +7,7 @@ import db from '../db/db.js';
 import { validate } from '../middleware/validate.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { visiblePostsWhere } from '../lib/visibility.js';
-import { postColumns, mapPost } from '../lib/postQuery.js';
+import { postColumns, mapPost, getPoll } from '../lib/postQuery.js';
 
 const router = Router();
 
@@ -20,7 +20,14 @@ const createPostSchema = z.object({
   eventId: z.number().int().positive().optional(),
   parentPostId: z.number().int().positive().optional(),
   mediaUrl: z.string().trim().max(500).optional(),
+  pollOptions: z
+    .array(z.string().trim().min(1).max(80))
+    .min(2, 'A poll needs at least 2 options')
+    .max(4, 'A poll can have at most 4 options')
+    .optional(),
 });
+
+const voteSchema = z.object({ optionId: z.number().int().positive() });
 
 const quotePostSchema = z.object({
   content: z
@@ -37,7 +44,7 @@ function getPostById(id, viewerId) {
   const row = db
     .prepare(`SELECT ${columns} FROM posts p JOIN users u ON u.id = p.author_id WHERE p.id = ?`)
     .get(...viewerParams, id);
-  return row ? mapPost(row) : null;
+  return row ? mapPost(row, { viewerId }) : null;
 }
 
 function getVisiblePostForAction(id, viewerId) {
@@ -72,18 +79,27 @@ function notifyPostAuthor(post, actorId, type) {
 
 // POST /api/posts — create a post (or a reply when parentPostId is set).
 router.post('/', requireAuth, validate(createPostSchema), (req, res) => {
-  const { content, eventId, parentPostId, mediaUrl } = req.body;
+  const { content, eventId, parentPostId, mediaUrl, pollOptions } = req.body;
   const parentPost = parentPostId ? getVisiblePostForAction(parentPostId, req.userId) : null;
   if (parentPostId && !parentPost) return res.status(400).json({ error: 'Invalid parentPostId' });
 
   try {
-    const info = db
-      .prepare(
-        'INSERT INTO posts (author_id, content, event_id, parent_post_id, media_url) VALUES (?, ?, ?, ?, ?)'
-      )
-      .run(req.userId, content, eventId ?? null, parentPostId ?? null, mediaUrl ?? null);
+    const newId = db.transaction(() => {
+      const info = db
+        .prepare(
+          'INSERT INTO posts (author_id, content, event_id, parent_post_id, media_url) VALUES (?, ?, ?, ?, ?)'
+        )
+        .run(req.userId, content, eventId ?? null, parentPostId ?? null, mediaUrl ?? null);
+      if (pollOptions?.length) {
+        const insertOpt = db.prepare(
+          'INSERT INTO poll_options (post_id, position, text) VALUES (?, ?, ?)'
+        );
+        pollOptions.forEach((text, i) => insertOpt.run(info.lastInsertRowid, i, text));
+      }
+      return info.lastInsertRowid;
+    })();
     if (parentPost) notifyPostAuthor(parentPost, req.userId, 'reply');
-    res.status(201).json({ post: getPostById(info.lastInsertRowid, req.userId) });
+    res.status(201).json({ post: getPostById(newId, req.userId) });
   } catch (err) {
     // FK violation => a referenced event or parent post doesn't exist.
     if (String(err.code).startsWith('SQLITE_CONSTRAINT')) {
@@ -105,7 +121,7 @@ router.get('/:id', optionalAuth, (req, res) => {
     )
     .get(...viewerParams, req.params.id, ...v.params);
   if (!row) return res.status(404).json({ error: 'Post not found' });
-  res.json({ post: mapPost(row) });
+  res.json({ post: mapPost(row, { viewerId: req.userId }) });
 });
 
 // GET /api/posts/:id/replies — direct replies to a visible post, oldest first.
@@ -125,7 +141,24 @@ router.get('/:id/replies', optionalAuth, (req, res) => {
     )
     .all(...viewerParams, parent.id, ...v.params);
 
-  res.json({ replies: rows.map(mapPost) });
+  res.json({ replies: rows.map((r) => mapPost(r, { viewerId: req.userId })) });
+});
+
+// POST /api/posts/:id/vote — cast or change your vote in a poll. One vote per user.
+router.post('/:id/vote', requireAuth, validate(voteSchema), (req, res) => {
+  const postId = Number(req.params.id);
+  if (!getVisiblePostForAction(postId, req.userId)) {
+    return res.status(404).json({ error: 'Post not found' });
+  }
+  const option = db.prepare('SELECT id, post_id FROM poll_options WHERE id = ?').get(req.body.optionId);
+  if (!option || option.post_id !== postId) {
+    return res.status(404).json({ error: 'Poll option not found' });
+  }
+  db.prepare(
+    `INSERT INTO poll_votes (post_id, user_id, option_id) VALUES (?, ?, ?)
+       ON CONFLICT(post_id, user_id) DO UPDATE SET option_id = excluded.option_id, created_at = datetime('now')`
+  ).run(postId, req.userId, option.id);
+  res.status(201).json({ poll: getPoll(postId, req.userId) });
 });
 
 // DELETE /api/posts/:id — author only.
