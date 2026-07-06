@@ -3,6 +3,9 @@
 REST API for the Rally event-centered microblogging app.
 Node.js (ESM) + Express 5 + SQLite (better-sqlite3). Auth via httpOnly session cookie.
 
+**Live API:** https://rally-api-xwg8.onrender.com — health check at `/api/health`.
+(Free tier: sleeps after ~15 min idle, so the first request may take ~50s to wake.)
+
 > **Status:** scaffold. Endpoints below are the agreed surface.
 > Each endpoint owner fills in the **request body** and **example response** columns as they build.
 
