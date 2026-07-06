@@ -73,6 +73,8 @@ function publicEvent(row) {
 }
 
 // Fetch one event joined to its category + creator, or undefined.
+// No visibility gate — used right after create/update where the caller is the creator.
+
 function findEventById(id) {
   return db
     .prepare(
@@ -85,6 +87,27 @@ function findEventById(id) {
         WHERE e.id = ?`
     )
     .get(id);
+}
+
+// Fetch an event only if its creator is visible to the viewer (i.e. the creator is
+// public, the viewer is the creator, or the viewer is a follower of the
+// private creator). Returns the joined row or undefined. This reuses the shared
+// user-privacy predicate (visiblePostsWhere) applied to the creator alias 'u', so
+// event visibility tracks account privacy exactly like post visibility does.
+
+function findVisibleEvent(id, viewerId) {
+  const v = visiblePostsWhere(viewerId, 'u');
+  return db
+    .prepare(
+      `SELECT e.*, c.slug AS category_slug, c.name AS category_name,
+              u.username AS creator_username, u.display_name AS creator_display_name,
+              u.avatar_url AS creator_avatar_url
+         FROM events e
+         JOIN categories c ON c.id = e.category_id
+         JOIN users u ON u.id = e.creator_id
+        WHERE e.id = ? AND ${v.clause}`
+    )
+    .get(id, ...v.params);
 }
 
 // "Going" count = anyone not explicitly 'not_going' (i.e. going + interested).
@@ -150,7 +173,11 @@ router.get('/', optionalAuth, validateQuery(calendarQuerySchema), (req, res) => 
     if (/^\d+$/.test(category)) { clauses.push('e.category_id = ?'); params.push(Number(category)); }
     else { clauses.push('c.slug = ?'); params.push(category); }
   }
-  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+  // Only show events whose creator is visible to the viewer (account visibility gate).
+  const v = visiblePostsWhere(req.userId, 'u');
+  clauses.push(v.clause);
+  params.push(...v.params);
+  const where = `WHERE ${clauses.join(' AND ')}`;
   const rows = db
     .prepare(
       `SELECT e.*, c.slug AS category_slug, c.name AS category_name,
@@ -190,8 +217,11 @@ router.get('/me/participating', requireAuth, (req, res) => {
 
 // GET /api/events/:id — one event + participant count, viewer's participation,
 // and the visibility-gated posts that share this event (relatedPosts).
+// A private creator's event returns 404 for viewers who aren't the creator or an accepted
+// follower (404 instead of 403, no existence leak).
+
 router.get('/:id', optionalAuth, (req, res) => {
-  const row = findEventById(req.params.id);
+  const row = findVisibleEvent(req.params.id, req.userId);
   if (!row) return res.status(404).json({ error: 'Event not found' });
 
   const participantCount = countParticipants(row.id);
@@ -298,7 +328,8 @@ const participateSchema = z.object({
 // Notifies the creator the first time someone RSVPs going/interested (not on repeats,
 // not for the creator's own RSVP).
 router.post('/:id/participate', requireAuth, validate(participateSchema), (req, res) => {
-  const event = db.prepare('SELECT id, creator_id FROM events WHERE id = ?').get(req.params.id);
+  // Can't RSVP to an event you can't see (private creators you don't follow).
+  const event = findVisibleEvent(req.params.id, req.userId);
   if (!event) return res.status(404).json({ error: 'Event not found' });
   const status = req.body.status || 'going';
 
@@ -331,8 +362,9 @@ router.delete('/:id/participate', requireAuth, (req, res) => {
 });
 
 // GET /api/events/:id/participants — everyone who RSVP'd, newest first.
-router.get('/:id/participants', (req, res) => {
-  const event = db.prepare('SELECT id FROM events WHERE id = ?').get(req.params.id);
+// Gated by event visibility (a private creator's participant list isn't public).
+router.get('/:id/participants', optionalAuth, (req, res) => {
+  const event = findVisibleEvent(req.params.id, req.userId);
   if (!event) return res.status(404).json({ error: 'Event not found' });
   const participants = db
     .prepare(
