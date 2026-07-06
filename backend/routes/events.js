@@ -87,7 +87,7 @@ function findEventById(id) {
     .get(id);
 }
 
-function findVisibleEventById(id, viewerId) {
+function findVisibleEvent(id, viewerId) {
   const v = visibleEventsWhere(viewerId, 'u');
   return db
     .prepare(
@@ -206,7 +206,7 @@ router.get('/me/participating', requireAuth, (req, res) => {
 // GET /api/events/:id — one event + participant count, viewer's participation,
 // and the visibility-gated posts that share this event (relatedPosts).
 router.get('/:id', optionalAuth, (req, res) => {
-  const row = findVisibleEventById(req.params.id, req.userId);
+  const row = findVisibleEvent(req.params.id, req.userId);
   if (!row) return res.status(404).json({ error: 'Event not found' });
 
   const participantCount = countParticipants(row.id);
