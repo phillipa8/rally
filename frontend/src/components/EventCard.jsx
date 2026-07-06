@@ -17,6 +17,9 @@ export default function EventCard({ event, participantCount }) {
       <h3 className="event-card__title">{event.title}</h3>
       <p className="event-card__meta muted">
         <span>🗓 {formatDate(event.startTime, 'ddd, MMM D · h:mm A')}</span>
+        {event.creator && (
+          <span> · 👤 {event.creator.displayName} (@{event.creator.username})</span>
+        )}
         {event.location && <span> · 📍 {event.location}</span>}
       </p>
     </Link>

@@ -1,5 +1,5 @@
 // App.jsx — providers + client-side routing for the whole app.
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import AppLayout from './components/AppLayout';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -10,7 +10,6 @@ import PostDetailPage from './pages/PostDetailPage';
 import MessagesPage from './pages/MessagesPage';
 import EventsPage from './pages/EventsPage';
 import EventDetailPage from './pages/EventDetailPage';
-import CalendarPage from './pages/CalendarPage';
 import CategoryPage from './pages/CategoryPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -42,7 +41,8 @@ export default function App() {
             />
             {/* Public discovery pages */}
             <Route path="explore" element={<ExplorePage />} />
-            <Route path="calendar" element={<CalendarPage />} />
+            {/* Calendar now lives inside the events hub; keep the old path working. */}
+            <Route path="calendar" element={<Navigate to="/events" replace />} />
             <Route path="search" element={<SearchPage />} />
             <Route path="trending" element={<TrendingPage />} />
 
