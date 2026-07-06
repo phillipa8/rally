@@ -28,7 +28,7 @@ export default function FollowListModal({ username, tab, onClose }) {
       ) : (
         <div className="user-list">
           {data.users.map((u) => (
-            <UserCard key={u.id} user={u} />
+            <UserCard key={u.id} user={u} followStatus={u.followStatus} showFollow={!u.isMe} />
           ))}
         </div>
       )}
