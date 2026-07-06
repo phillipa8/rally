@@ -80,11 +80,6 @@ app.use('/api/media', mediaRouter);                    // B
 app.use('/api/bookmarks', bookmarksRouter);            // B
 app.use('/api/categories', categoriesRouter);          // C
 app.use('/api/search', searchRouter);                  // D
-// TODO (feature tracks):
-//   app.use('/api/events', eventsRouter);        // C
-app.use('/api/events', eventsRouter);                  // C
-// TODO (feature tracks):
-//   app.use('/api/search', searchRouter);        // D
 app.use('/api/events', eventsRouter);                  // C
 
 // --- 404 + central error handler (LAST) ----------------------------------
