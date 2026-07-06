@@ -5,24 +5,23 @@ services:
     name: rally-api
     runtime: node
     rootDir: backend
-    plan: starter               # NOTE: persistent disks require a paid instance.
+    plan: free                  # free web service ($0). Sleeps after ~15 min idle (~50s cold start).
     buildCommand: npm install    # compiles better-sqlite3 / bcrypt (native)
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: 22.21.0           # pin Node; root .nvmrc isn't read under rootDir: backend
       - key: SESSION_SECRET
         generateValue: true      # Render generates a long random secret
       - key: CLIENT_ORIGIN
         sync: false              # set to your Vercel URL, e.g. https://rally.vercel.app
       - key: BASE_URL
         sync: false              # set to this service's URL, e.g. https://rally-api.onrender.com
-      - key: DATABASE_PATH
-        value: /var/data/app.db  # on the persistent disk below
-      - key: UPLOAD_DIR
-        value: /var/data/uploads
-    disk:
-      name: rally-data           # keeps the SQLite DB + uploaded images across deploys
-      mountPath: /var/data
-      sizeGB: 1
+    # No persistent disk on the free tier: DATABASE_PATH / UPLOAD_DIR fall back to their code
+    # defaults (./db/app.db and ./uploads) on the ephemeral instance filesystem. The SQLite DB and
+    # uploaded images therefore reset on every restart/redeploy — acceptable for a graded demo.
+    # For durable storage, switch to a paid instance and re-add a `disk:` mounted at /var/data with
+    # DATABASE_PATH=/var/data/app.db and UPLOAD_DIR=/var/data/uploads.
