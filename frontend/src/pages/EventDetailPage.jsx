@@ -11,6 +11,7 @@ import { formatDate } from '../lib/time';
 import Avatar from '../components/Avatar';
 import Modal from '../components/Modal';
 import EventForm from '../components/EventForm';
+import EventInviteModal from '../components/EventInviteModal';
 import ShareEventComposer from '../components/ShareEventComposer';
 import ParticipateButton from '../components/ParticipateButton';
 import PostList from '../components/PostList';
@@ -25,6 +26,7 @@ export default function EventDetailPage() {
   const { data, loading, error, refetch } = useApi(`/events/${id}`, [id]);
   const [editing, setEditing] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [inviting, setInviting] = useState(false);
   const del = useMutation(() => apiClient.delete(`/events/${id}`));
 
   if (loading) return <LoadingState label="Loading event…" />;
@@ -106,14 +108,23 @@ export default function EventDetailPage() {
         <div className="event-detail__actions">
           {isAuthenticated ? (
             <>
-              <ParticipateButton
-                eventId={event.id}
-                participating={isParticipating}
-                count={participantCount}
-              />
-              <button type="button" className="btn btn--small" onClick={() => setSharing(true)}>
-                Share to feed
-              </button>
+              <div className="event-detail__rsvp">
+                <ParticipateButton
+                  eventId={event.id}
+                  participating={isParticipating}
+                  count={participantCount}
+                />
+              </div>
+              <div className="event-detail__share-actions">
+                {isCreator && (
+                  <button type="button" className="btn btn--small btn--ghost" onClick={() => setInviting(true)}>
+                    Invite
+                  </button>
+                )}
+                <button type="button" className="btn btn--small" onClick={() => setSharing(true)}>
+                  Share to feed
+                </button>
+              </div>
             </>
           ) : (
             <span className="muted">{participantCount} going</span>
@@ -148,6 +159,10 @@ export default function EventDetailPage() {
             refetch();
           }}
         />
+      </Modal>
+
+      <Modal open={inviting} onClose={() => setInviting(false)} title="Invite people">
+        <EventInviteModal event={event} />
       </Modal>
     </section>
   );

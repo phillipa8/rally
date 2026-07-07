@@ -1,6 +1,6 @@
 // MessagesPage.jsx — direct messages with followers.
-import { useState } from 'react';
-import { NavLink, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, NavLink, useParams } from 'react-router-dom';
 import apiClient from '../api/client';
 import { useApi, useMutation } from '../api/hooks';
 import { useAuth } from '../context/AuthContext';
@@ -11,6 +11,23 @@ import ErrorState from '../components/ErrorState';
 import LoadingState from '../components/LoadingState';
 
 const MAX = 1000;
+
+function MessageContent({ content }) {
+  const parts = content.split(/(\/events\/\d+)/g);
+  return (
+    <p className="dm-message__content">
+      {parts.map((part, index) =>
+        /^\/events\/\d+$/.test(part) ? (
+          <Link key={`${part}-${index}`} to={part}>
+            {part}
+          </Link>
+        ) : (
+          <span key={`${part}-${index}`}>{part}</span>
+        )
+      )}
+    </p>
+  );
+}
 
 export default function MessagesPage() {
   const { username } = useParams();
@@ -27,6 +44,21 @@ export default function MessagesPage() {
   const tooLong = content.length > MAX;
   const canSend = !!username && !empty && !tooLong && !send.loading;
 
+  useEffect(() => {
+    let cancelled = false;
+    apiClient
+      .put('/messages/read-all')
+      .then(() => {
+        if (!cancelled) window.dispatchEvent(new CustomEvent('messages:read'));
+      })
+      .catch(() => {
+        /* read state is best-effort and not worth blocking the page */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   async function onSubmit(e) {
     e.preventDefault();
     if (!canSend) return;
@@ -41,7 +73,7 @@ export default function MessagesPage() {
   }
 
   return (
-    <section className="page dm-page">
+    <section className={`page dm-page ${username ? 'dm-page--thread' : 'dm-page--list'}`}>
       <h1 className="page__title">DMs</h1>
 
       <div className="dm-shell">
@@ -82,6 +114,9 @@ export default function MessagesPage() {
           ) : (
             <>
               <header className="dm-thread__head">
+                <Link to="/messages" className="dm-back" aria-label="Back to DMs">
+                  ‹
+                </Link>
                 <Avatar user={target} size={36} />
                 <div>
                   <h2 className="dm-thread__name">{target?.displayName}</h2>
@@ -100,7 +135,7 @@ export default function MessagesPage() {
                         key={message.id}
                         className={`dm-message${mine ? ' dm-message--mine' : ''}`}
                       >
-                        <p className="dm-message__content">{message.content}</p>
+                        <MessageContent content={message.content} />
                         <time className="dm-message__time" dateTime={message.createdAt}>
                           {formatDate(message.createdAt, 'MMM D, h:mm A')}
                         </time>

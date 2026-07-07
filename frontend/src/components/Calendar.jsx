@@ -1,6 +1,6 @@
 // Calendar.jsx — reusable month calendar module consisting of events with a category filter (Owner: Member C).
-// Embeddable (no page chrome): its own month toolbar + filter, a 7 column grid on desktop
-// and an agenda list on mobile (CSS-toggled). Highlights days the viewer is attending.
+// Embeddable (no page chrome): its own month toolbar + filter, a 7 column grid,
+// plus a compact agenda list on mobile. Highlights days the viewer is attending.
 
 import { useState, useMemo } from 'react';
 import dayjs from 'dayjs';
@@ -95,6 +95,7 @@ export default function Calendar() {
             />
           </div>
           <div className="cal-agenda">
+            <h3 className="cal-agenda__title">Events this month</h3>
             {events.length === 0 ? (
               <EmptyState title="No events this month" hint="Try another month or category." />
             ) : (
