@@ -15,6 +15,12 @@ const messageSchema = z.object({
     .max(1000, 'Message must be at most 1000 characters'),
 });
 
+function unreadCount(userId) {
+  return db
+    .prepare('SELECT COUNT(*) AS n FROM direct_messages WHERE recipient_id = ? AND read_at IS NULL')
+    .get(userId).n;
+}
+
 function publicUser(row) {
   return {
     id: row.id,
@@ -128,6 +134,18 @@ router.get('/', requireAuth, (req, res) => {
       lastMessageAt: row.lastMessageAt ?? null,
     })),
   });
+});
+
+// GET /api/messages/unread-count — unread DM badge count for the current user.
+router.get('/unread-count', requireAuth, (req, res) => {
+  res.json({ unreadCount: unreadCount(req.userId) });
+});
+
+// PUT /api/messages/read-all — mark every received DM as read.
+router.put('/read-all', requireAuth, (req, res) => {
+  db.prepare("UPDATE direct_messages SET read_at = datetime('now') WHERE recipient_id = ? AND read_at IS NULL")
+    .run(req.userId);
+  res.json({ unreadCount: 0 });
 });
 
 // GET /api/messages/:username — message thread between the viewer and one user.

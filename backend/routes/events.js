@@ -51,6 +51,10 @@ const updateEventSchema = z
     path: ['endTime'],
   });
 
+const inviteSchema = z.object({
+  username: z.string().trim().min(1, 'Username is required').max(30),
+});
+
 // Map a joined event row -> safe public shape (camelCase, with category + creator).
 function publicEvent(row) {
   return {
@@ -69,6 +73,18 @@ function publicEvent(row) {
       displayName: row.creator_display_name,
       avatarUrl: row.creator_avatar_url,
     },
+  };
+}
+
+function publicUser(row) {
+  return {
+    id: row.id,
+    username: row.username,
+    displayName: row.display_name,
+    bio: row.bio,
+    avatarUrl: row.avatar_url,
+    isPrivate: !!row.is_private,
+    createdAt: row.created_at,
   };
 }
 
@@ -109,6 +125,24 @@ function countParticipants(eventId) {
   return db
     .prepare("SELECT COUNT(*) AS n FROM event_participants WHERE event_id = ? AND status != 'not_going'")
     .get(eventId).n;
+}
+
+function isBlockedEitherWay(userId, otherId) {
+  return !!db
+    .prepare(
+      `SELECT 1 FROM blocks
+        WHERE (blocker_id = ? AND blocked_id = ?)
+           OR (blocker_id = ? AND blocked_id = ?)`
+    )
+    .get(userId, otherId, otherId, userId);
+}
+
+function isFollowingAccepted(userId, targetId) {
+  return !!db
+    .prepare(
+      "SELECT 1 FROM follows WHERE follower_id = ? AND following_id = ? AND status = 'accepted'"
+    )
+    .get(userId, targetId);
 }
 
 // Insert an in-app notification (local helper mirroring users.js; supports eventId).
@@ -240,6 +274,58 @@ router.get('/discover', optionalAuth, validateQuery(discoverQuerySchema), (req, 
     )
     .all(...v.params);
   res.json({ events: rows.map((r) => ({ ...publicEvent(r), participantCount: r.participant_count })) });
+});
+
+// GET /api/events/:id/invitees — people the event owner follows and can invite by DM.
+router.get('/:id/invitees', requireAuth, (req, res) => {
+  const event = db.prepare('SELECT id, creator_id FROM events WHERE id = ?').get(req.params.id);
+  if (!event) return res.status(404).json({ error: 'Event not found' });
+  if (event.creator_id !== req.userId) {
+    return res.status(403).json({ error: 'You can only invite people to your own events' });
+  }
+
+  const rows = db
+    .prepare(
+      `SELECT u.*
+         FROM follows f
+         JOIN users u ON u.id = f.following_id
+        WHERE f.follower_id = ?
+          AND f.status = 'accepted'
+          AND NOT EXISTS (
+                SELECT 1 FROM blocks b
+                 WHERE (b.blocker_id = ? AND b.blocked_id = u.id)
+                    OR (b.blocker_id = u.id AND b.blocked_id = ?)
+              )
+        ORDER BY u.username ASC`
+    )
+    .all(req.userId, req.userId, req.userId);
+
+  res.json({ users: rows.map(publicUser) });
+});
+
+// POST /api/events/:id/invite — send an event link to one followed user by DM.
+router.post('/:id/invite', requireAuth, validate(inviteSchema), (req, res) => {
+  const event = findEventById(req.params.id);
+  if (!event) return res.status(404).json({ error: 'Event not found' });
+  if (event.creator_id !== req.userId) {
+    return res.status(403).json({ error: 'You can only invite people to your own events' });
+  }
+
+  const recipient = db.prepare('SELECT * FROM users WHERE username = ?').get(req.body.username);
+  if (!recipient) return res.status(404).json({ error: 'User not found' });
+  if (recipient.id === req.userId) return res.status(400).json({ error: 'You cannot invite yourself' });
+  if (!isFollowingAccepted(req.userId, recipient.id)) {
+    return res.status(403).json({ error: 'You can only invite people you follow' });
+  }
+  if (isBlockedEitherWay(req.userId, recipient.id)) {
+    return res.status(403).json({ error: 'You cannot invite this user' });
+  }
+
+  const content = `You're invited to ${event.title}: /events/${event.id}`;
+  db.prepare('INSERT INTO direct_messages (sender_id, recipient_id, content) VALUES (?, ?, ?)')
+    .run(req.userId, recipient.id, content);
+
+  res.status(201).json({ invited: true, user: publicUser(recipient), message: content });
 });
 
 // GET /api/events/:id — one event + participant count, viewer's participation,
