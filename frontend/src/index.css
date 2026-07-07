@@ -860,7 +860,8 @@ a:hover { text-decoration: underline; }
 }
 
 .cal-grid {
-  display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px;
+  /* Cap the number of maximum characters */
+  display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 1px;
   background: var(--border); border: 1px solid var(--border);
   border-radius: var(--radius); overflow: hidden;
 }
@@ -871,13 +872,15 @@ a:hover { text-decoration: underline; }
 .cal-cell {
   background: var(--surface, #fff); min-height: 92px; padding: 0.3rem;
   display: flex; flex-direction: column; gap: 0.2rem;
+  cursor: pointer; /* the whole cell selects its day */
 }
-.cal-cell--blank { background: transparent; }
+.cal-cell--blank { background: transparent; cursor: default; }
 .cal-cell--rsvp { background: #eef2ff; }
 /* Today = purple tint (after --rsvp so it wins when both apply);
    the square outline marks the tapped/selected day, not today. */
 .cal-cell--today { background: #e0e7ff; }
 .cal-cell--today .cal-cell__num { color: var(--brand-dark); }
+.cal-cell--selected { outline: 2px solid var(--brand-dark); outline-offset: -2px; }
 .cal-cell__num { font-size: 0.8rem; font-weight: 600; color: var(--muted); }
 .cal-cell__events { display: flex; flex-direction: column; gap: 0.15rem; }
 .cal-pill {
@@ -887,8 +890,8 @@ a:hover { text-decoration: underline; }
 }
 .cal-cell__more { font-size: 0.7rem; color: var(--muted); }
 
-/* Desktop grid vs. mobile agenda: show one, hide the other. */
-.cal-agenda { display: none; flex-direction: column; gap: 0.75rem; }
+/* Month agenda (all viewports), below the grid; a selected day scopes it. */
+.cal-agenda { display: flex; flex-direction: column; gap: 0.75rem; }
 .cal-agenda__title { margin: 1rem 0 0; font-size: 1rem; }
 
 /* Compact one-line agenda rows showing of the month,
@@ -933,7 +936,6 @@ a:hover { text-decoration: underline; }
   .cal-toolbar { align-items: flex-start; flex-direction: column; gap: 0.55rem; }
   .cal-nav { width: 100%; justify-content: space-between; }
   .cal-nav .btn { flex: 1; padding-inline: 0.35rem; }
-  .cal-desktop { display: block; }
   .cal-grid { border-radius: 8px; }
   .cal-grid__head { padding: 0.25rem 0.1rem; font-size: 0.58rem; }
   .cal-cell { min-height: 58px; padding: 0.18rem; gap: 0.12rem; }
@@ -945,13 +947,6 @@ a:hover { text-decoration: underline; }
     padding: 0;
     border-radius: 999px;
     font-size: 0;
-    /* Dots are markers only on phones: taps fall through to the day cell
-       (selection). Keyboard/screen-reader users still get the links. */
-    pointer-events: none;
   }
   .cal-cell__more { font-size: 0.58rem; line-height: 1; }
-  .cal-agenda { display: flex; }
-  /* Tap-selected day scoping the agenda: square outline (today is the tinted
-     cell). Mobile-only — on desktop the agenda is hidden, so selection is inert. */
-  .cal-cell--selected { outline: 2px solid var(--brand-dark); outline-offset: -2px; }
 }
