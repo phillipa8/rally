@@ -1,6 +1,6 @@
 // Calendar.jsx — reusable month calendar module consisting of events with a category filter (Owner: Member C).
 // Embeddable (no page chrome): its own month toolbar + filter, a 7 column grid,
-// plus a compact agenda list on mobile. Highlights days the viewer is attending.
+// plus a compact agenda list below it. It highlights days the viewer is attending.
 // Tapping a day switches the focus to that day and tapping it again reverts to the month.
 
 import { useState, useMemo } from 'react';
@@ -115,7 +115,7 @@ export default function Calendar() {
                 title={selectedDay ? 'No events this day' : 'No events this month'}
                 hint={
                   selectedDay
-                    ? 'Tap the day again to see the whole month.'
+                    ? 'Select the day again to see the whole month.'
                     : 'Try another month or category.'
                 }
               />

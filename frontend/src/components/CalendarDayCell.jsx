@@ -1,10 +1,8 @@
 // CalendarDayCell.jsx — respresents a single day in the month grid (Owner: Member C).
 // Shows the date number and a few event pills. Extra events collapse to "+N more".
-// Tapping the cell toggles day selection (mobile agenda scope). On desktop the
-// pills are links, so their clicks must not bubble into the selection toggle;
-// on mobile the dots are pointer-inert (see .cal-pill) and taps select the day.
-
-import { Link } from 'react-router-dom';
+// The whole cell is one click/tap target that toggles day selection (scoping the
+// agenda list below the calendar), pills are merely labels indecating 
+// the presense of events and events open from the agenda list.
 
 const MAX_PILLS = 3;
 
@@ -29,15 +27,9 @@ export default function CalendarDayCell({
       <span className="cal-cell__num">{date.date()}</span>
       <div className="cal-cell__events">
         {shown.map((e) => (
-          <Link
-            key={e.id}
-            to={`/events/${e.id}`}
-            className="cal-pill"
-            title={e.title}
-            onClick={(event) => event.stopPropagation()}
-          >
+          <span key={e.id} className="cal-pill" title={e.title}>
             {e.title}
-          </Link>
+          </span>
         ))}
         {extra > 0 && <span className="cal-cell__more">+{extra} more</span>}
       </div>
