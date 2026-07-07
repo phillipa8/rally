@@ -1,12 +1,20 @@
 // CalendarGrid.jsx — a 7 column month grid (Owner: Member C).
 // 'month' is a dayjs at the start of the month; 'eventsByDay' maps 'YYYY-MM-DD' to
 // events[]; 'participatingDays' is a Set of 'YYYY-MM-DD' the viewer RSVP'd to.
+// 'selectedDay'/'onSelectDay' drive the mobile agenda's day scoping.
 
 import CalendarDayCell from './CalendarDayCell';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-export default function CalendarGrid({ month, eventsByDay, participatingDays, today }) {
+export default function CalendarGrid({
+  month,
+  eventsByDay,
+  participatingDays,
+  today,
+  selectedDay,
+  onSelectDay,
+}) {
   const startOfMonth = month.startOf('month');
   const daysInMonth = month.daysInMonth();
   const leadingBlanks = startOfMonth.day(); // 0 = Sunday
@@ -32,6 +40,8 @@ export default function CalendarGrid({ month, eventsByDay, participatingDays, to
             events={eventsByDay.get(key) || []}
             participating={participatingDays.has(key)}
             today={today === key}
+            selected={selectedDay === key}
+            onSelect={() => onSelectDay(key)}
           />
         );
       })}
