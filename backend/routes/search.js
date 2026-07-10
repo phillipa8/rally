@@ -174,7 +174,9 @@ router.get('/users', optionalAuth, validateQuery(searchQuerySchema), (req, res) 
   const pattern = likePattern(q);
   const usernameQuery = q.startsWith('@') ? q.slice(1).trim() : q;
   const usernamePattern = likePattern(usernameQuery || q);
-  const exactPrivateUsername = q.startsWith('@') ? usernameQuery : '';
+  // Private accounts are reachable only by their exact handle. Use the bare username whether or
+  // not the query included a leading '@' (the '? != ''' guard below still blocks an empty handle).
+  const exactPrivateUsername = usernameQuery;
   const rows = db
     .prepare(
       `SELECT u.id, u.username, u.display_name AS displayName, u.bio,
