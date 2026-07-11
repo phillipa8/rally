@@ -8,11 +8,14 @@ import { useMutation } from '../api/hooks';
 import apiClient from '../api/client';
 import PrivacyToggle from '../components/PrivacyToggle';
 import BlockedUsersPanel from '../components/BlockedUsersPanel';
+import Avatar from '../components/Avatar';
+import ImageUploader from '../components/ImageUploader';
 
 export default function SettingsPage() {
   const { user, refresh } = useAuth();
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [bio, setBio] = useState(user?.bio || '');
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || null);
   const [saved, setSaved] = useState(false);
   const { mutate, loading, error } = useMutation((body) => apiClient.put('/users/me', body));
 
@@ -20,13 +23,15 @@ export default function SettingsPage() {
   useEffect(() => {
     setDisplayName(user?.displayName || '');
     setBio(user?.bio || '');
+    setAvatarUrl(user?.avatarUrl || null);
   }, [user]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setSaved(false);
     try {
-      await mutate({ displayName: displayName.trim(), bio: bio.trim() });
+      // avatarUrl: '' clears the picture server-side; a URL sets it.
+      await mutate({ displayName: displayName.trim(), bio: bio.trim(), avatarUrl: avatarUrl || '' });
       await refresh();
       setSaved(true);
     } catch {
@@ -42,6 +47,17 @@ export default function SettingsPage() {
         <h2 className="settings__heading">Profile</h2>
         {error && <p className="form__error" role="alert">{error}</p>}
         {saved && <p className="form__ok" role="status">Saved.</p>}
+
+        <div className="field">
+          <span>Profile picture</span>
+          <div className="avatar-editor">
+            <Avatar user={{ ...user, avatarUrl }} size={64} />
+            <ImageUploader
+              value={avatarUrl}
+              onChange={(url) => { setAvatarUrl(url); setSaved(false); }}
+            />
+          </div>
+        </div>
 
         <label className="field">
           <span>Display name</span>

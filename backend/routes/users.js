@@ -16,6 +16,7 @@ const updateMeSchema = z
   .object({
     displayName: z.string().trim().min(1, 'Display name is required').max(50).optional(),
     bio: z.string().trim().max(160, 'Bio must be at most 160 characters').optional(),
+    avatarUrl: z.string().trim().max(500, 'Avatar URL is too long').optional(),
     isPrivate: z.boolean().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, { message: 'No fields to update' });
@@ -124,12 +125,13 @@ function profileCounts(userId) {
 // Flipping isPrivate from true -> false auto-accepts any pending follow requests,
 // matching how real platforms open up a newly-public account.
 router.put('/me', requireAuth, validate(updateMeSchema), (req, res) => {
-  const { displayName, bio, isPrivate } = req.body;
+  const { displayName, bio, avatarUrl, isPrivate } = req.body;
 
   const fields = [];
   const params = [];
   if (displayName !== undefined) { fields.push('display_name = ?'); params.push(displayName); }
   if (bio !== undefined) { fields.push('bio = ?'); params.push(bio); }
+  if (avatarUrl !== undefined) { fields.push('avatar_url = ?'); params.push(avatarUrl || null); }
   if (isPrivate !== undefined) { fields.push('is_private = ?'); params.push(isPrivate ? 1 : 0); }
 
   const apply = db.transaction(() => {
