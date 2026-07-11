@@ -35,6 +35,10 @@ export default function EventDetailPage() {
 
   const { event, participantCount, isParticipating, relatedPosts } = data;
   const isCreator = user?.id === event.creator.id;
+  // Displays the full date on the end time only when the event spans multiple
+  // days (compared in the viewer's local timezone).
+  const sameDay =
+    formatDate(event.startTime, 'YYYY-MM-DD') === formatDate(event.endTime, 'YYYY-MM-DD');
 
   async function handleDelete() {
     if (!window.confirm('Delete this event? Shared posts remain but lose their event link.')) return;
@@ -81,7 +85,7 @@ export default function EventDetailPage() {
             <dt>When</dt>
             <dd>
               {formatDate(event.startTime, 'ddd, MMM D, YYYY · h:mm A')} –{' '}
-              {formatDate(event.endTime, 'h:mm A')}
+              {formatDate(event.endTime, sameDay ? 'h:mm A' : 'ddd, MMM D, YYYY · h:mm A')}
             </dd>
           </div>
           {event.location && (

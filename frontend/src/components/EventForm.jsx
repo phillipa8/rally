@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { useMutation } from '../api/hooks';
 import apiClient from '../api/client';
-import { toSqlUtc, toDatetimeLocal } from '../lib/time';
+import { toSqlUtc, toDatetimeLocal, nowDatetimeLocal } from '../lib/time';
 import CategorySelect from './CategorySelect';
 
 const MAX_TITLE = 120;
@@ -27,6 +27,11 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
   const titleTooLong = title.trim().length > MAX_TITLE;
   // datetime-local strings ('YYYY-MM-DDTHH:mm') compare lexically == chronologically.
   const badRange = startTime !== '' && endTime !== '' && endTime <= startTime;
+  // Only a changed start time may not be in the past and editing an already-started
+  // event may keep its original start.
+  const originalStart = event ? toDatetimeLocal(event.startTime) : null;
+  const pastStart =
+    startTime !== '' && startTime !== originalStart && startTime < nowDatetimeLocal();
   const canSave =
     title.trim() !== '' &&
     categoryId != null &&
@@ -34,6 +39,7 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
     endTime !== '' &&
     !titleTooLong &&
     !badRange &&
+    !pastStart &&
     !loading;
 
   async function submit(e) {
@@ -99,6 +105,7 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
         </label>
       </div>
       {badRange && <p className="form__error">End time must be after start time.</p>}
+      {pastStart && <p className="form__error">Start time cannot be in the past.</p>}
 
       <label className="field">
         <span>Location</span>
