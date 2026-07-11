@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Avatar from './Avatar';
 import SearchBar from './SearchBar';
+import ThemeToggle from './ThemeToggle';
 
 export default function Navbar() {
   const { isAuthenticated, user, logout, loading } = useAuth();
@@ -45,6 +46,7 @@ export default function Navbar() {
       </div>
 
       <nav className="navbar__actions">
+        <ThemeToggle />
         {loading ? (
           // Reserve space during the initial session probe to avoid an auth-state flicker.
           <span className="navbar__placeholder" aria-hidden="true" />
