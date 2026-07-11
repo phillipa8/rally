@@ -6,16 +6,17 @@ import apiClient from '../api/client';
 import { useApi } from '../api/hooks';
 import { useAuth } from '../context/AuthContext';
 
+// Search and Trending live inside Explore now (issue #26). desktopOnly items
+// stay off the mobile bottom bar (max 5 tabs); Profile is one tap away via the
+// navbar avatar and Saved remains reachable on desktop / by URL.
 const ITEMS = [
   { to: '/', label: 'Home', icon: '🏠', end: true },
   { to: '/explore', label: 'Explore', icon: '🔭' },
-  { to: '/messages', label: 'DMs', icon: '✉️', auth: true },
   { to: '/events', label: 'Events', icon: '🎉' },
-  { to: '/search', label: 'Search', icon: '🔍' },
-  { to: '/trending', label: 'Trending', icon: '🔥' },
+  { to: '/messages', label: 'DMs', icon: '✉️', auth: true },
   { to: '/notifications', label: 'Alerts', icon: '🔔', auth: true },
-  { to: '/bookmarks', label: 'Saved', icon: '🔖', auth: true },
-  { to: '/profile', label: 'Profile', icon: '👤', auth: true },
+  { to: '/bookmarks', label: 'Saved', icon: '🔖', auth: true, desktopOnly: true },
+  { to: '/profile', label: 'Profile', icon: '👤', auth: true, desktopOnly: true },
 ];
 
 export default function SidebarNav() {
@@ -53,7 +54,9 @@ export default function SidebarNav() {
           to={item.to}
           end={item.end}
           onClick={() => handleClick(item)}
-          className={({ isActive }) => `sidebar__link${isActive ? ' sidebar__link--active' : ''}`}
+          className={({ isActive }) =>
+            `sidebar__link${isActive ? ' sidebar__link--active' : ''}${item.desktopOnly ? ' sidebar__link--desktop' : ''}`
+          }
         >
           <span className="sidebar__icon-wrap">
             <span className="sidebar__icon" aria-hidden="true">

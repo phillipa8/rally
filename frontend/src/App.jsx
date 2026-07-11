@@ -1,5 +1,5 @@
 // App.jsx — providers + client-side routing for the whole app.
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import AppLayout from './components/AppLayout';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -15,10 +15,15 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
 import NotificationsPage from './pages/NotificationsPage';
-import TrendingPage from './pages/TrendingPage';
 import SettingsPage from './pages/SettingsPage';
-import SearchPage from './pages/SearchPage';
 import NotFoundPage from './pages/NotFoundPage';
+
+// Search and Trending merged into Explore (issue #26); forward the old URLs.
+// Keeps ?q= intact so bookmarked /search?q=… links still work.
+function SearchRedirect() {
+  const { search } = useLocation();
+  return <Navigate to={`/explore${search}`} replace />;
+}
 
 export default function App() {
   return (
@@ -43,8 +48,9 @@ export default function App() {
             <Route path="explore" element={<ExplorePage />} />
             {/* Calendar now lives inside the events hub; keep the old path working. */}
             <Route path="calendar" element={<Navigate to="/events" replace />} />
-            <Route path="search" element={<SearchPage />} />
-            <Route path="trending" element={<TrendingPage />} />
+            {/* Search + Trending now live inside Explore; keep the old paths working. */}
+            <Route path="search" element={<SearchRedirect />} />
+            <Route path="trending" element={<Navigate to="/explore" replace />} />
 
             {/* Protected pages */}
             <Route

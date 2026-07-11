@@ -14,7 +14,7 @@ export default function Navbar() {
   const handleSearch = useCallback(
     (query) => {
       if (!query) return;
-      navigate(`/search?q=${encodeURIComponent(query)}`);
+      navigate(`/explore?q=${encodeURIComponent(query)}`);
     },
     [navigate]
   );
@@ -52,10 +52,10 @@ export default function Navbar() {
           <span className="navbar__placeholder" aria-hidden="true" />
         ) : isAuthenticated ? (
           <>
-            <span className="navbar__user">
+            <Link to="/profile" className="navbar__user" title="Your profile">
               <Avatar user={user} size={32} />
               <span className="navbar__username">@{user.username}</span>
-            </span>
+            </Link>
             <button type="button" className="btn btn--small" onClick={handleLogout} disabled={loggingOut}>
               {loggingOut ? 'Logging out…' : 'Log out'}
             </button>

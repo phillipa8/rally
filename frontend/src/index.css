@@ -145,6 +145,7 @@ a:hover { text-decoration: underline; }
 }
 .navbar__actions { margin-left: auto; display: flex; align-items: center; gap: 0.6rem; }
 .navbar__user { display: flex; align-items: center; gap: 0.5rem; }
+.navbar__user:hover { text-decoration: none; }
 .navbar__username { font-size: 0.9rem; color: var(--muted); }
 .navbar__placeholder { display: inline-block; width: 120px; height: 32px; }
 
@@ -316,13 +317,15 @@ a:hover { text-decoration: underline; }
   }
   .sidebar::-webkit-scrollbar { display: none; }
   .sidebar__link {
-    flex: 0 0 58px;
+    flex: 1 0 58px;
     min-width: 58px;
     flex-direction: column;
     gap: 0.05rem;
     padding: 0.32rem 0.25rem;
     font-size: 0.58rem;
   }
+  /* Desktop-only destinations (Saved, Profile) stay off the 5-tab bottom bar. */
+  .sidebar__link--desktop { display: none; }
   .sidebar__icon { font-size: 1.05rem; }
 }
 
