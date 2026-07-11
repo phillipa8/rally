@@ -46,7 +46,7 @@ Legend — **Auth**: 🔒 requires login · 🌐 public (private content filtere
 |---|---|---|---|---|
 | GET | `/api/users/:username` | ⚪ | — | `{ user, counts:{followers,following,posts}, isMe, followStatus }` where `followStatus` ∈ `accepted`\|`pending`\|`null`. 404 if unknown. |
 | GET | `/api/users/:username/posts` | ⚪ | — | `{ posts:[…] }` top-level posts, newest first; private authors gated (owner/accepted follower only). 404 if unknown. |
-| PUT | `/api/users/me` | 🔒 | `{ displayName?, bio?, isPrivate? }` (≥1 field) | `{ user }`. Setting `isPrivate:false` auto-accepts pending requests. 400 if empty/invalid. |
+| PUT | `/api/users/me` | 🔒 | `{ displayName?, bio?, avatarUrl?, isPrivate? }` (≥1 field) | `{ user }`. `avatarUrl:""` clears the picture (upload via `POST /media` first). Setting `isPrivate:false` auto-accepts pending requests. 400 if empty/invalid. |
 | GET | `/api/users/:username/followers` | ⚪ | — | `{ users:[…] }` accepted followers. 404 if unknown. |
 | GET | `/api/users/:username/following` | ⚪ | — | `{ users:[…] }` accepted follows. 404 if unknown. |
 | POST | `/api/users/:username/follow` | 🔒 | — | 201 `{ status }` — `accepted` (public) or `pending` (private); emits `follow`/`follow_request` notification. Idempotent. 400 self-follow, 404 unknown. |
@@ -56,11 +56,11 @@ Legend — **Auth**: 🔒 requires login · 🌐 public (private content filtere
 | PUT | `/api/follow-requests/:id/reject` | 🔒 | — | `{ status:"rejected" }`; removes the pending row. 404 if no pending request. |
 
 ### Posts, feed, media, bookmarks — `routes/posts.js`, `routes/feed.js`, `routes/media.js`, `routes/bookmarks.js`  (Owner: Member B)
-Every post is returned in a shared shape (`lib/postQuery.js`): `{ id, content, mediaUrl, eventId, parentPostId, createdAt, author:{id,username,displayName,avatarUrl}, likeCount, repostCount, replyCount, bookmarkCount, likedByMe, repostedByMe, bookmarkedByMe }`. Private authors' posts are gated by `visiblePostsWhere`.
+Every post is returned in a shared shape (`lib/postQuery.js`): `{ id, content, mediaUrl, eventId, parentPostId, commentsDisabled, createdAt, author:{id,username,displayName,avatarUrl}, likeCount, repostCount, replyCount, bookmarkCount, likedByMe, repostedByMe, bookmarkedByMe }`. Private authors' posts are gated by `visiblePostsWhere`.
 
 | Method | URL | Auth | Body | Response |
 |---|---|---|---|---|
-| POST | `/api/posts` | 🔒 | `{ content (1–280), eventId?, parentPostId?, mediaUrl? }` | 201 `{ post }`. 400 on empty/>280 or invalid eventId/parentPostId. |
+| POST | `/api/posts` | 🔒 | `{ content (1–280), eventId?, parentPostId?, mediaUrl?, commentsDisabled? }` | 201 `{ post }`. 400 on empty/>280, invalid eventId/parentPostId, or `commentsDisabled` on a reply. 403 when replying to a replies-off post (the author may still reply). |
 | GET | `/api/posts/:id` | ⚪ | — | `{ post }`. 404 if not found or hidden (private author). |
 | DELETE | `/api/posts/:id` | 🔒 | — | 204 (author). 403 if not the author, 404 if missing. |
 | GET | `/api/feed` | 🔒 | — | `{ posts }` — reverse-chron top-level posts from you + accepted-followed, incl. reposts (`repostedBy`). **401 if unauthenticated.** |
@@ -71,19 +71,24 @@ Every post is returned in a shared shape (`lib/postQuery.js`): `{ id, content, m
 | DELETE | `/api/posts/:id/bookmark` | 🔒 | — | 204 (idempotent). 404 if post missing. |
 
 ### Events, participation, calendar, categories — `routes/events.js`, `routes/categories.js`  (Owner: Member C)
+Events can be **private**: visible only to their creator and the creator's accepted followers
+(`visibleEventsWhere` gates every event-returning query — hidden events 404 like missing ones).
+`isPrivate` defaults to the creator's account privacy setting.
+
 | Method | URL | Auth | Body | Response |
 |---|---|---|---|---|
-| POST | `/api/events` | 🔒 | TODO (title, description, categoryId, start, end, location, ageRestriction) | TODO |
-| GET | `/api/events` | ⚪ | query: `from`,`to`,`category` | TODO (calendar range + filter) |
-| GET | `/api/events/:id` | ⚪ | — | TODO (+ participantCount, isParticipating, relatedPosts) |
-| PUT | `/api/events/:id` | 🔒 | TODO | TODO (creator only; fires event_update notifications) |
-| DELETE | `/api/events/:id` | 🔒 | — | TODO (creator only) |
-| POST | `/api/events/:id/participate` | 🔒 | TODO (status) | TODO |
-| DELETE | `/api/events/:id/participate` | 🔒 | — | TODO |
-| GET | `/api/events/:id/participants` | ⚪ | — | TODO |
-| GET | `/api/users/me/events/participating` | 🔒 | — | TODO |
-| GET | `/api/categories` | 🌐 | — | TODO (fixed list) |
-| GET | `/api/categories/:slug/posts` | ⚪ | — | TODO |
+| POST | `/api/events` | 🔒 | `{ title (1–120), description?, categoryId, startTime, endTime, location?, ageRestriction?, isPrivate? }` (times: `YYYY-MM-DD HH:MM:SS` UTC) | 201 `{ event }`. 400 on bad category/times. |
+| GET | `/api/events` | ⚪ | query: `from`,`to`,`category` (slug or id) | `{ events:[…] }` calendar range + filter, each with `participantCount`, start-time asc. |
+| GET | `/api/events/:id` | ⚪ | — | `{ event, participantCount, isParticipating, relatedPosts }`. 404 if missing/hidden. |
+| PUT | `/api/events/:id` | 🔒 | any subset of the POST fields (≥1) | `{ event }` (creator only; notifies participants who can still see it). 403 not creator, 404 missing. |
+| DELETE | `/api/events/:id` | 🔒 | — | 204 (creator only; shared posts survive, losing their event link). |
+| POST | `/api/events/:id/participate` | 🔒 | `{ status? }` ∈ going\|interested\|not_going (default going) | 201/200 `{ status, participating, participantCount }`; notifies the creator on first RSVP. 404 if missing/hidden. |
+| DELETE | `/api/events/:id/participate` | 🔒 | — | 204 — withdraw RSVP (idempotent). 404 if missing/hidden. |
+| GET | `/api/events/:id/participants` | ⚪ | — | `{ participants:[{…user, status}] }` newest first. 404 if missing/hidden. |
+| GET | `/api/events/me/participating` | 🔒 | — | `{ events:[…] }` your going/interested events, soonest first. |
+| GET | `/api/events/discover` | ⚪ | query: `sort` ∈ upcoming\|popular | `{ events:[…] }` up to 10 not-yet-ended events. |
+| GET | `/api/categories` | 🌐 | — | `{ categories:[{id, slug, name}] }` fixed list of 6. |
+| GET | `/api/categories/:slug/posts` | ⚪ | — | `{ category, posts:[…] }` posts sharing this category's events. 404 unknown slug. |
 
 ### Engagement & search — `routes/posts.js` (likes/reposts/replies), `routes/search.js`  (Owner: Member D)
 | Method | URL | Auth | Body | Response |
@@ -113,3 +118,4 @@ Every post is returned in a shared shape (`lib/postQuery.js`): `{ id, content, m
 | Method | URL | Auth | Body | Response |
 |---|---|---|---|---|
 | GET | `/api/health` | 🌐 | — | `{ "status": "ok", "service": "rally-api", "time": "..." }` |
+| POST | `/api/admin/import` | 🔑 | fixture payload (users, follows, events, posts, engagement, DMs, notifications) | Token-gated bulk fixture loader for demo/staging DBs; **404 unless the `ADMIN_TOKEN` env var is set** and a matching `x-admin-token` header is sent. 201 `{ imported: {…counts} }`. |

@@ -448,7 +448,11 @@ router.put('/:id', requireAuth, validate(updateEventSchema), (req, res) => {
         "SELECT user_id FROM event_participants WHERE event_id = ? AND user_id != ? AND status != 'not_going'"
       )
       .all(eventId, req.userId);
-    for (const r of recipients) notify(r.user_id, req.userId, 'event_update', eventId);
+    // Skip participants who can no longer see the event (e.g. it just went private) —
+    // their notification link would 404.
+    for (const r of recipients) {
+      if (findVisibleEvent(eventId, r.user_id)) notify(r.user_id, req.userId, 'event_update', eventId);
+    }
   });
   fanOut();
 
@@ -502,8 +506,10 @@ router.post('/:id/participate', requireAuth, validate(participateSchema), (req, 
 });
 
 // DELETE /api/events/:id/participate — withdraw RSVP (idempotent → 204).
+// Visibility-gated like its POST sibling: hidden and nonexistent both 404,
+// so the route can't be used to probe which event ids exist.
 router.delete('/:id/participate', requireAuth, (req, res) => {
-  const event = db.prepare('SELECT id FROM events WHERE id = ?').get(req.params.id);
+  const event = findVisibleEvent(req.params.id, req.userId);
   if (!event) return res.status(404).json({ error: 'Event not found' });
   db.prepare('DELETE FROM event_participants WHERE user_id = ? AND event_id = ?').run(req.userId, event.id);
   res.status(204).end();

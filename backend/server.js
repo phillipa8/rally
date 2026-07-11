@@ -45,7 +45,11 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json({ limit: '1mb' })); // fixture imports exceed the 100kb default
+// Fixture imports exceed the 100kb default, so the admin router gets its own 1mb
+// parser (mounted before the global one — body-parser skips already-parsed bodies).
+// Every other route keeps the standard limit.
+app.use('/api/admin', express.json({ limit: '1mb' }), adminRouter);
+app.use(express.json());
 app.use(morgan('dev'));
 
 // --- Sessions (httpOnly cookie, stored in the same SQLite DB) -------------
@@ -84,7 +88,8 @@ app.use('/api/categories', categoriesRouter);          // C
 app.use('/api/search', searchRouter);                  // D
 app.use('/api/events', eventsRouter);                  // C
 app.use('/api/messages', messagesRouter);              // D
-app.use('/api/admin', adminRouter);                    // fixture import — inert without ADMIN_TOKEN
+// /api/admin (fixture import, inert without ADMIN_TOKEN) is mounted above with
+// its own JSON body limit.
 
 // --- 404 + central error handler (LAST) ----------------------------------
 app.use(notFound);

@@ -45,7 +45,8 @@ router.get('/events', optionalAuth, (req, res) => {
     .prepare(
       `SELECT * FROM (
          SELECT e.id, e.title, e.description, e.location,
-                e.start_time AS startTime, e.end_time AS endTime, e.created_at AS createdAt,
+                e.start_time AS startTime, e.end_time AS endTime,
+                e.is_private AS isPrivate, e.created_at AS createdAt,
                 c.slug AS categorySlug, c.name AS categoryName,
                 u.username AS creatorUsername, u.display_name AS creatorDisplayName,
                 (SELECT COUNT(*) FROM event_participants ep
@@ -66,28 +67,38 @@ router.get('/events', optionalAuth, (req, res) => {
     )
     .all(...v.params);
 
-  res.json({ events: rows.map((r) => ({ ...r, score: r.newParticipants + r.shares })) });
+  res.json({
+    events: rows.map((r) => ({ ...r, isPrivate: !!r.isPrivate, score: r.newParticipants + r.shares })),
+  });
 });
 
 // GET /api/trending/categories  — the 6 fixed categories ranked by last-24h
 // activity. Categories attach to EVENTS, so a category's activity = new events
 // + posts sharing those events + new participants, all within 24h. The full set
 // is returned (ordered) so the client can render a "trending categories" bar.
-router.get('/categories', optionalAuth, (_req, res) => {
+// Each subquery is gated by event visibility so private events' activity never
+// moves a public score.
+router.get('/categories', optionalAuth, (req, res) => {
+  const v = visibleEventsWhere(req.userId, 'u', 'e');
   const rows = db
     .prepare(
       `SELECT c.id, c.slug, c.name,
-              (SELECT COUNT(*) FROM events e
-                 WHERE e.category_id = c.id AND e.created_at >= datetime('now','-1 day')) AS newEvents,
+              (SELECT COUNT(*) FROM events e JOIN users u ON u.id = e.creator_id
+                 WHERE e.category_id = c.id AND e.created_at >= datetime('now','-1 day')
+                   AND ${v.clause}) AS newEvents,
               (SELECT COUNT(*) FROM posts p JOIN events e ON e.id = p.event_id
-                 WHERE e.category_id = c.id AND p.created_at >= datetime('now','-1 day')) AS shares,
+                 JOIN users u ON u.id = e.creator_id
+                 WHERE e.category_id = c.id AND p.created_at >= datetime('now','-1 day')
+                   AND ${v.clause}) AS shares,
               (SELECT COUNT(*) FROM event_participants ep JOIN events e ON e.id = ep.event_id
+                 JOIN users u ON u.id = e.creator_id
                  WHERE e.category_id = c.id AND ep.status IN ('going','interested')
-                   AND ep.created_at >= datetime('now','-1 day')) AS newParticipants
+                   AND ep.created_at >= datetime('now','-1 day')
+                   AND ${v.clause}) AS newParticipants
          FROM categories c
         ORDER BY (newEvents + shares + newParticipants) DESC, c.name ASC`
     )
-    .all();
+    .all(...v.params, ...v.params, ...v.params);
 
   res.json({
     categories: rows.map((r) => ({ ...r, score: r.newEvents + r.shares + r.newParticipants })),

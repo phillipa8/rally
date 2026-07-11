@@ -102,8 +102,9 @@ function canViewProfileContent(viewerId, target) {
 }
 
 // Aggregate profile counts. Only 'accepted' follows count toward follower/following;
-// pending requests are not public relationships yet.
-function profileCounts(userId) {
+// pending requests are not public relationships yet. The events count is gated by
+// the same visibility predicate as the events list so the two always agree.
+function profileCounts(userId, viewerId) {
   const followers = db
     .prepare("SELECT COUNT(*) AS n FROM follows WHERE following_id = ? AND status = 'accepted'")
     .get(userId).n;
@@ -117,7 +118,15 @@ function profileCounts(userId) {
   const requests = db
     .prepare("SELECT COUNT(*) AS n FROM follows WHERE following_id = ? AND status = 'pending'")
     .get(userId).n;
-  const events = db.prepare('SELECT COUNT(*) AS n FROM events WHERE creator_id = ?').get(userId).n;
+  const v = visibleEventsWhere(viewerId, 'u');
+  const events = db
+    .prepare(
+      `SELECT COUNT(*) AS n
+         FROM events e
+         JOIN users u ON u.id = e.creator_id
+        WHERE e.creator_id = ? AND ${v.clause}`
+    )
+    .get(userId, ...v.params).n;
   return { followers, following, posts, requests, events };
 }
 
@@ -176,7 +185,7 @@ router.get('/:username', optionalAuth, (req, res) => {
 
   res.json({
     user: publicUser(row),
-    counts: profileCounts(row.id),
+    counts: profileCounts(row.id, req.userId),
     isMe: req.userId === row.id,
     followStatus: followStatus(req.userId, row.id),
     blockedByMe: blocks.blockedByMe,

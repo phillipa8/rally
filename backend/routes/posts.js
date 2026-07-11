@@ -6,7 +6,7 @@ import { z } from 'zod';
 import db from '../db/db.js';
 import { validate } from '../middleware/validate.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
-import { visiblePostsWhere } from '../lib/visibility.js';
+import { visiblePostsWhere, visibleEventsWhere } from '../lib/visibility.js';
 import { postColumns, mapPost, getPoll } from '../lib/postQuery.js';
 
 const router = Router();
@@ -89,6 +89,15 @@ router.post('/', requireAuth, validate(createPostSchema), (req, res) => {
   // The author may still reply under their own replies-off post (platform norm).
   if (parentPost?.commentsDisabled && parentPost.authorId !== req.userId) {
     return res.status(403).json({ error: 'Replies are turned off for this post' });
+  }
+  // An event you can't see behaves exactly like one that doesn't exist (same 400 as
+  // the FK backstop below), so this can't be used to probe hidden event ids.
+  if (eventId != null) {
+    const ev = visibleEventsWhere(req.userId, 'u', 'e');
+    const visibleEvent = db
+      .prepare(`SELECT 1 FROM events e JOIN users u ON u.id = e.creator_id WHERE e.id = ? AND ${ev.clause}`)
+      .get(eventId, ...ev.params);
+    if (!visibleEvent) return res.status(400).json({ error: 'Invalid eventId or parentPostId' });
   }
 
   try {

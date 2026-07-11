@@ -51,6 +51,7 @@ const importSchema = z.object({
         createdAt: sqlTime,
       })
     )
+    .max(500) // bcrypt hashing is synchronous — bound the work a single request can demand
     .default([]),
   follows: z
     .array(
