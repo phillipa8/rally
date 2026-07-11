@@ -14,6 +14,12 @@ import { postColumns, mapPost } from '../lib/postQuery.js';
 
 const router = Router();
 
+// Returns the urrent UTC time in the storage format ('YYYY-MM-DD HH:MM:SS'), for
+// checking if an event's start time is not in the past.
+function sqlUtcNow() {
+  return new Date().toISOString().slice(0, 19).replace('T', ' ');
+}
+
 // Create: all core fields required. endTime > startTime is enforced here AND by the
 // events.end_time >= start_time CHECK (belt-and-suspenders). Times are the same
 // 'YYYY-MM-DD HH:MM:SS' strings used across the app; lexical compare == chronological.
@@ -30,6 +36,10 @@ const createEventSchema = z
   .refine((d) => d.endTime > d.startTime, {
     message: 'End time must be after start time',
     path: ['endTime'],
+  })
+  .refine((d) => d.startTime >= sqlUtcNow(), {
+    message: 'Start time cannot be in the past',
+    path: ['startTime'],
   });
 
 // Update: every field optional (partial), at least one required. Cross-field
@@ -372,10 +382,21 @@ router.get('/:id', optionalAuth, (req, res) => {
 // PUT /api/events/:id — creator-only edit. 404 before 403 (no existence leak of
 // which ids exist). Builds a partial UPDATE like users.js PUT /me.
 router.put('/:id', requireAuth, validate(updateEventSchema), (req, res) => {
-  const existing = db.prepare('SELECT creator_id FROM events WHERE id = ?').get(req.params.id);
+  const existing = db
+    .prepare('SELECT creator_id, start_time FROM events WHERE id = ?')
+    .get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Event not found' });
   if (existing.creator_id !== req.userId) {
     return res.status(403).json({ error: 'You can only edit your own events' });
+  }
+  // Only a *changed* start time must not be in the past — keeping the original
+  // start of an already-started event editable (e.g. fixing a typo in the title).
+  if (
+    req.body.startTime !== undefined &&
+    req.body.startTime !== existing.start_time &&
+    req.body.startTime < sqlUtcNow()
+  ) {
+    return res.status(400).json({ error: 'Start time cannot be in the past' });
   }
 
   const map = {

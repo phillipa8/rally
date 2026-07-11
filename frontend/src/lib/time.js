@@ -31,3 +31,9 @@ export function toSqlUtc(localInput) {
 export function toDatetimeLocal(ts) {
   return dayjs.utc(ts).local().format('YYYY-MM-DDTHH:mm');
 }
+
+// Current local wall-clock in the datetime-local input format, for checking
+// if an event's start time is not in the past.
+export function nowDatetimeLocal() {
+  return dayjs().format('YYYY-MM-DDTHH:mm');
+}
