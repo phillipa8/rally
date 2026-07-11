@@ -25,7 +25,12 @@ export default function ProfileHeader({
           ) : (
             <>
               {!blockedByMe && (
-                <FollowButton username={user.username} initialStatus={followStatus} onChange={onChange} />
+                <FollowButton
+                  username={user.username}
+                  initialStatus={followStatus}
+                  isPrivate={user.isPrivate}
+                  onChange={onChange}
+                />
               )}
               <BlockButton username={user.username} initialBlocked={blockedByMe} onChange={onChange} />
             </>

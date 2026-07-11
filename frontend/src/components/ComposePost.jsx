@@ -1,7 +1,8 @@
 // ComposePost.jsx — write a new post with an optional image or poll (Owner: Member B).
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import apiClient, { errorMessage } from '../api/client';
+import apiClient from '../api/client';
+import { useMutation } from '../api/hooks';
 import Avatar from './Avatar';
 import CharCounter from './CharCounter';
 import ImageUploader from './ImageUploader';
@@ -13,15 +14,14 @@ export default function ComposePost({ onPosted }) {
   const [content, setContent] = useState('');
   const [mediaUrl, setMediaUrl] = useState(null);
   const [poll, setPoll] = useState(null); // null = no poll | array of 2–4 option strings
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(null);
+  const { mutate, loading, error } = useMutation((body) => apiClient.post('/posts', body));
 
   const tooLong = content.length > MAX;
   const empty = content.trim().length === 0;
   const pollActive = poll != null;
   const filledOptions = pollActive ? poll.map((o) => o.trim()).filter(Boolean) : [];
   const pollValid = !pollActive || filledOptions.length >= 2;
-  const canPost = !empty && !tooLong && !busy && pollValid;
+  const canPost = !empty && !tooLong && !loading && pollValid;
 
   const togglePoll = () => setPoll(pollActive ? null : ['', '']);
   const setOption = (i, val) => setPoll((opts) => opts.map((o, idx) => (idx === i ? val : o)));
@@ -31,10 +31,8 @@ export default function ComposePost({ onPosted }) {
   async function submit(e) {
     e.preventDefault();
     if (!canPost) return;
-    setBusy(true);
-    setError(null);
     try {
-      await apiClient.post('/posts', {
+      await mutate({
         content: content.trim(),
         mediaUrl: mediaUrl || undefined,
         pollOptions: pollActive ? filledOptions : undefined,
@@ -43,10 +41,8 @@ export default function ComposePost({ onPosted }) {
       setMediaUrl(null);
       setPoll(null);
       onPosted?.();
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setBusy(false);
+    } catch {
+      /* error surfaced below */
     }
   }
 
@@ -122,7 +118,7 @@ export default function ComposePost({ onPosted }) {
           )}
         </div>
         <button type="submit" className="btn" disabled={!canPost}>
-          {busy ? 'Posting…' : 'Post'}
+          {loading ? 'Posting…' : 'Post'}
         </button>
       </div>
     </form>

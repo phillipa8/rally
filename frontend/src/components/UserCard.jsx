@@ -16,7 +16,7 @@ export default function UserCard({ user, followStatus = null, showFollow = true 
         </span>
       </Link>
       {showFollow && (
-        <FollowButton username={user.username} initialStatus={followStatus} />
+        <FollowButton username={user.username} initialStatus={followStatus} isPrivate={user.isPrivate} />
       )}
     </div>
   );

@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useMutation } from '../api/hooks';
 import apiClient from '../api/client';
 
-export default function FollowButton({ username, initialStatus = null, onChange }) {
+export default function FollowButton({ username, initialStatus = null, isPrivate = false, onChange }) {
   const { isAuthenticated } = useAuth();
   const [status, setStatus] = useState(initialStatus); // null | 'pending' | 'accepted'
   const { mutate, loading, error } = useMutation((action) =>
@@ -34,7 +34,7 @@ export default function FollowButton({ username, initialStatus = null, onChange 
     try {
       if (next === 'follow') {
         const res = await mutate('follow');
-        const newStatus = res?.data?.status ?? 'accepted'; // accepted (public) or pending (private)
+        const newStatus = res?.data?.status ?? (isPrivate ? 'pending' : 'accepted'); // accepted (public) or pending (private)
         setStatus(newStatus);
         onChange?.(newStatus);
       } else {
