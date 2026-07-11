@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS posts (
   parent_post_id INTEGER,                          -- nullable: this post is a reply
   quoted_post_id INTEGER,                          -- nullable: this post quotes another post
   media_url      TEXT,                             -- nullable: single image
+  comments_disabled INTEGER NOT NULL DEFAULT 0 CHECK (comments_disabled IN (0,1)),
   created_at     TEXT    NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (author_id)      REFERENCES users(id)  ON DELETE CASCADE,
   FOREIGN KEY (event_id)       REFERENCES events(id) ON DELETE SET NULL,

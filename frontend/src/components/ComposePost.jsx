@@ -14,6 +14,7 @@ export default function ComposePost({ onPosted }) {
   const [content, setContent] = useState('');
   const [mediaUrl, setMediaUrl] = useState(null);
   const [poll, setPoll] = useState(null); // null = no poll | array of 2–4 option strings
+  const [repliesOff, setRepliesOff] = useState(false);
   const { mutate, loading, error } = useMutation((body) => apiClient.post('/posts', body));
 
   const tooLong = content.length > MAX;
@@ -36,10 +37,12 @@ export default function ComposePost({ onPosted }) {
         content: content.trim(),
         mediaUrl: mediaUrl || undefined,
         pollOptions: pollActive ? filledOptions : undefined,
+        commentsDisabled: repliesOff || undefined,
       });
       setContent('');
       setMediaUrl(null);
       setPoll(null);
+      setRepliesOff(false);
       onPosted?.();
     } catch {
       /* error surfaced below */
@@ -116,6 +119,15 @@ export default function ComposePost({ onPosted }) {
               📊 Poll
             </button>
           )}
+          <button
+            type="button"
+            className={`compose__tool${repliesOff ? ' compose__tool--on' : ''}`}
+            onClick={() => setRepliesOff((v) => !v)}
+            title={repliesOff ? 'Allow replies' : 'Turn off replies for this post'}
+            aria-pressed={repliesOff}
+          >
+            🚫 Replies off
+          </button>
         </div>
         <button type="submit" className="btn" disabled={!canPost}>
           {loading ? 'Posting…' : 'Post'}

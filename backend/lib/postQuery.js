@@ -23,7 +23,8 @@ export function postColumns(viewerId) {
   return {
     columns: `
       p.id, p.content, p.event_id AS eventId, p.parent_post_id AS parentPostId,
-      p.quoted_post_id AS quotedPostId, p.media_url AS mediaUrl, p.created_at AS createdAt,
+      p.quoted_post_id AS quotedPostId, p.media_url AS mediaUrl,
+      p.comments_disabled AS commentsDisabled, p.created_at AS createdAt,
       u.id AS authorId, u.username, u.display_name AS displayName, u.avatar_url AS avatarUrl,
       (SELECT COUNT(*) FROM likes l     WHERE l.post_id = p.id)        AS likeCount,
       ((SELECT COUNT(*) FROM reposts r  WHERE r.post_id = p.id) +
@@ -82,6 +83,7 @@ export function mapPost(row, opts = {}) {
     parentPostId: row.parentPostId ?? null,
     quotedPostId: row.quotedPostId ?? null,
     mediaUrl: row.mediaUrl ?? null,
+    commentsDisabled: !!row.commentsDisabled,
     createdAt: row.createdAt,
     author: {
       id: row.authorId,

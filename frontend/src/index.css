@@ -684,6 +684,7 @@ a:hover { text-decoration: underline; }
 .post-action--like-on { color: #e0245e; }
 .post-action--repost-on { color: var(--ok); }
 .post-action--bookmark-on { color: var(--brand); }
+.post-action--muted { opacity: 0.45; }
 .post-action--delete { margin-left: auto; }
 .post-action--delete:hover { background: #fef2f2; color: var(--danger); }
 

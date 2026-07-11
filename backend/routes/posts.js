@@ -25,6 +25,10 @@ const createPostSchema = z.object({
     .min(2, 'A poll needs at least 2 options')
     .max(4, 'A poll can have at most 4 options')
     .optional(),
+  commentsDisabled: z.boolean().optional(),
+}).refine((d) => !(d.commentsDisabled && d.parentPostId), {
+  message: 'Only top-level posts can turn off replies',
+  path: ['commentsDisabled'],
 });
 
 const voteSchema = z.object({ optionId: z.number().int().positive() });
@@ -51,7 +55,7 @@ function getVisiblePostForAction(id, viewerId) {
   const v = visiblePostsWhere(viewerId, 'u');
   return db
     .prepare(
-      `SELECT p.id, p.author_id AS authorId
+      `SELECT p.id, p.author_id AS authorId, p.comments_disabled AS commentsDisabled
          FROM posts p
          JOIN users u ON u.id = p.author_id
         WHERE p.id = ? AND ${v.clause}`
@@ -79,17 +83,21 @@ function notifyPostAuthor(post, actorId, type) {
 
 // POST /api/posts — create a post (or a reply when parentPostId is set).
 router.post('/', requireAuth, validate(createPostSchema), (req, res) => {
-  const { content, eventId, parentPostId, mediaUrl, pollOptions } = req.body;
+  const { content, eventId, parentPostId, mediaUrl, pollOptions, commentsDisabled } = req.body;
   const parentPost = parentPostId ? getVisiblePostForAction(parentPostId, req.userId) : null;
   if (parentPostId && !parentPost) return res.status(400).json({ error: 'Invalid parentPostId' });
+  // The author may still reply under their own replies-off post (platform norm).
+  if (parentPost?.commentsDisabled && parentPost.authorId !== req.userId) {
+    return res.status(403).json({ error: 'Replies are turned off for this post' });
+  }
 
   try {
     const newId = db.transaction(() => {
       const info = db
         .prepare(
-          'INSERT INTO posts (author_id, content, event_id, parent_post_id, media_url) VALUES (?, ?, ?, ?, ?)'
+          'INSERT INTO posts (author_id, content, event_id, parent_post_id, media_url, comments_disabled) VALUES (?, ?, ?, ?, ?, ?)'
         )
-        .run(req.userId, content, eventId ?? null, parentPostId ?? null, mediaUrl ?? null);
+        .run(req.userId, content, eventId ?? null, parentPostId ?? null, mediaUrl ?? null, commentsDisabled ? 1 : 0);
       if (pollOptions?.length) {
         const insertOpt = db.prepare(
           'INSERT INTO poll_options (post_id, position, text) VALUES (?, ?, ?)'

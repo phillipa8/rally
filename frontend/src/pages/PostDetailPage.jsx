@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useApi } from '../api/hooks';
+import { useAuth } from '../context/AuthContext';
 import PostCard from '../components/PostCard';
 import ReplyComposer from '../components/ReplyComposer';
 import ThreadView from '../components/ThreadView';
@@ -11,6 +12,7 @@ import EmptyState from '../components/EmptyState';
 
 export default function PostDetailPage() {
   const { id } = useParams();
+  const { user } = useAuth();
   const { data, loading, error, refetch } = useApi(`/posts/${id}`, [id]);
   const [threadVersion, setThreadVersion] = useState(0);
 
@@ -26,7 +28,13 @@ export default function PostDetailPage() {
   return (
     <section className="page">
       <PostCard post={data.post} onChange={refreshThread} />
-      <ReplyComposer parentPost={data.post} onPosted={refreshThread} />
+      {data.post.commentsDisabled && user?.id !== data.post.author?.id ? (
+        <div className="card reply-composer reply-composer--signed-out">
+          <p className="reply-composer__hint">🚫 Replies are turned off for this post.</p>
+        </div>
+      ) : (
+        <ReplyComposer parentPost={data.post} onPosted={refreshThread} />
+      )}
       <ThreadView postId={id} refreshKey={threadVersion} onChange={refreshThread} />
     </section>
   );

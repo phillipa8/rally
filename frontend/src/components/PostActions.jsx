@@ -87,7 +87,12 @@ export default function PostActions({ post, onChange }) {
   return (
     <>
       <div className="post-actions" aria-busy={loading}>
-        <button type="button" className="post-action" title="Reply" onClick={() => navigate(`/posts/${post.id}`)}>
+        <button
+          type="button"
+          className={`post-action${post.commentsDisabled ? ' post-action--muted' : ''}`}
+          title={post.commentsDisabled ? 'Replies are off' : 'Reply'}
+          onClick={() => navigate(`/posts/${post.id}`)}
+        >
           💬 <span>{post.replyCount ?? 0}</span>
         </button>
         <button

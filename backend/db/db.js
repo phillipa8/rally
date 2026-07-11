@@ -29,6 +29,17 @@ if (!hasColumn('posts', 'quoted_post_id')) {
   }
 }
 
+if (!hasColumn('posts', 'comments_disabled')) {
+  const postsTableExists = db
+    .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'posts'")
+    .get();
+  if (postsTableExists) {
+    db.prepare(
+      'ALTER TABLE posts ADD COLUMN comments_disabled INTEGER NOT NULL DEFAULT 0 CHECK (comments_disabled IN (0,1))'
+    ).run();
+  }
+}
+
 if (!hasColumn('events', 'is_private')) {
   const eventsTableExists = db
     .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'events'")
