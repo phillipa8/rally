@@ -15,14 +15,17 @@ function Rank({ n }) {
   return <span className="trending__rank">#{n}</span>;
 }
 
+// Each row links to its detail surface. The whole row is the click target (a single
+// Link), so inner links are kept as plain text to avoid invalid nested anchors —
+// e.g. the post row's author becomes text; open the post to reach the author.
 function PostRow({ post, rank }) {
   return (
-    <article className="trending__row">
+    <Link className="trending__row" to={`/posts/${post.id}`}>
       <Rank n={rank} />
       <div className="trending__main">
         <p className="trending__content">{post.content}</p>
         <p className="trending__meta">
-          <Link to={`/u/${post.username}`}>@{post.username}</Link>
+          @{post.username}
           {' · '}
           {formatDate(post.createdAt, 'MMM D')}
         </p>
@@ -30,13 +33,13 @@ function PostRow({ post, rank }) {
       <span className="trending__score" title="Likes + reposts in the last 24h">
         🔥 {post.score}
       </span>
-    </article>
+    </Link>
   );
 }
 
 function EventRow({ event, rank }) {
   return (
-    <article className="trending__row">
+    <Link className="trending__row" to={`/events/${event.id}`}>
       <Rank n={rank} />
       <div className="trending__main">
         <p className="trending__content">{event.title}</p>
@@ -51,24 +54,24 @@ function EventRow({ event, rank }) {
       <span className="trending__score" title="New participants + shares in the last 24h">
         🔥 {event.score}
       </span>
-    </article>
+    </Link>
   );
 }
 
 function CategoryRow({ category, rank }) {
   return (
-    <article className="trending__row">
+    <Link className="trending__row" to={`/category/${category.slug}`}>
       <Rank n={rank} />
       <div className="trending__main">
         <p className="trending__content">{category.name}</p>
         <p className="trending__meta">
-          {category.newEvents} new events · {category.shares} shares
+          {category.newEvents} new events · {category.shares} shares · tap to see events
         </p>
       </div>
       <span className="trending__score" title="Activity in the last 24h">
         🔥 {category.score}
       </span>
-    </article>
+    </Link>
   );
 }
 

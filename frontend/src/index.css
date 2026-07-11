@@ -447,6 +447,10 @@ a:hover { text-decoration: underline; }
   padding: 0.8rem 1rem; border-bottom: 1px solid var(--border);
 }
 .trending__row:last-child { border-bottom: none; }
+/* Rows are links; keep normal text color and show a hover affordance. */
+a.trending__row { color: inherit; transition: background 0.12s ease; }
+a.trending__row:hover { background: var(--brand-soft); text-decoration: none; }
+a.trending__row:hover .trending__content { color: var(--brand-dark); }
 .trending__rank { color: var(--muted); font-weight: 700; font-size: 0.9rem; min-width: 1.75rem; }
 .trending__main { flex: 1; min-width: 0; }
 .trending__content { margin: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
