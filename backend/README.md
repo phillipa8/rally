@@ -8,8 +8,8 @@ Node.js (ESM) + Express 5 + SQLite (better-sqlite3). Auth via httpOnly session c
 Pushes to `main` touching `backend/` auto-deploy via GitHub Actions → Render Deploy Hook
 (`.github/workflows/deploy-backend.yml`).
 
-> **Status:** scaffold. Endpoints below are the agreed surface.
-> Each endpoint owner fills in the **request body** and **example response** columns as they build.
+Every endpoint below is documented with its method, URL, authentication requirement,
+request body, and example response.
 
 ## Run locally
 
@@ -34,12 +34,24 @@ curl http://localhost:4000/api/health
 Legend — **Auth**: 🔒 requires login · 🌐 public (private content filtered) · ⚪ optional auth.
 
 ### Auth — `routes/auth.js`  (Owner: Member A)
+The user object returned by these endpoints is `{ id, username, displayName, bio, avatarUrl, isPrivate, createdAt }` (never the password hash). A successful register or login sets the `connect.sid` httpOnly session cookie.
+
 | Method | URL | Auth | Body | Response |
 |---|---|---|---|---|
-| POST | `/api/auth/register` | 🌐 | TODO | TODO |
-| POST | `/api/auth/login` | 🌐 | TODO | TODO |
-| POST | `/api/auth/logout` | 🔒 | — | TODO |
-| GET  | `/api/auth/me` | ⚪ | — | TODO |
+| POST | `/api/auth/register` | 🌐 | `{ username (3–30, letters/numbers/underscore), displayName (1–50), password (8–100) }` | 201 `{ user }` + session cookie. 400 on invalid fields; 409 if the username is taken. |
+| POST | `/api/auth/login` | 🌐 | `{ username, password }` | 200 `{ user }` + session cookie. 401 on wrong username/password (constant-time, no user-enumeration). |
+| POST | `/api/auth/logout` | 🔒 | — | 204 — destroys the session and clears the cookie. **401 if not logged in.** |
+| GET  | `/api/auth/me` | ⚪ | — | 200 `{ user }` when a valid session exists, else 200 `{ user: null }`. Used on app load to rehydrate auth across refresh. |
+
+**Example — `POST /api/auth/register`**
+```jsonc
+// request
+{ "username": "maya_rivers", "displayName": "Maya Rivers", "password": "s3cret-passw0rd" }
+// 201 response
+{ "user": { "id": 1, "username": "maya_rivers", "displayName": "Maya Rivers",
+            "bio": null, "avatarUrl": null, "isPrivate": false,
+            "createdAt": "2026-07-11 14:57:13" } }
+```
 
 ### Users & social graph — `routes/users.js`  (Owner: Member A)
 | Method | URL | Auth | Body | Response |
