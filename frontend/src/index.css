@@ -792,6 +792,8 @@ a:hover { text-decoration: underline; }
 .page__actions { display: flex; align-items: center; gap: 0.5rem; }
 .page__subtitle { margin: 1.5rem 0 0.75rem; font-size: 1.1rem; }
 
+.event-share { display: flex; flex-direction: column; gap: 0.75rem; }
+
 .event-form { display: flex; flex-direction: column; gap: 0.75rem; }
 .event-form__row { display: flex; gap: 0.75rem; }
 .event-form__row .field { flex: 1; }
