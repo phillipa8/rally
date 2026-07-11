@@ -29,6 +29,17 @@ if (!hasColumn('posts', 'quoted_post_id')) {
   }
 }
 
+if (!hasColumn('events', 'is_private')) {
+  const eventsTableExists = db
+    .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'events'")
+    .get();
+  if (eventsTableExists) {
+    db.prepare(
+      'ALTER TABLE events ADD COLUMN is_private INTEGER NOT NULL DEFAULT 0 CHECK (is_private IN (0,1))'
+    ).run();
+  }
+}
+
 // Apply the schema (idempotent — every statement uses IF NOT EXISTS / OR IGNORE).
 const schema = fs.readFileSync(path.join(import.meta.dirname, 'schema.sql'), 'utf8');
 db.exec(schema);

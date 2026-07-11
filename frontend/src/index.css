@@ -796,6 +796,8 @@ a:hover { text-decoration: underline; }
 .event-share { display: flex; flex-direction: column; gap: 0.75rem; }
 
 .event-form { display: flex; flex-direction: column; gap: 0.75rem; }
+.checkbox-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer; }
+.checkbox-row input { accent-color: var(--brand); width: 1rem; height: 1rem; }
 .event-form__row { display: flex; gap: 0.75rem; }
 .event-form__row .field { flex: 1; }
 .event-form__actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.25rem; }

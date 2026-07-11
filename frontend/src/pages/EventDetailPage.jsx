@@ -59,6 +59,11 @@ export default function EventDetailPage() {
               {event.category.name}
             </Link>
           )}
+          {event.isPrivate && (
+            <span className="chip" title="Only the host's accepted followers can see this event">
+              🔒 Private
+            </span>
+          )}
           {isCreator && (
             <div className="event-detail__controls">
               <button type="button" className="btn btn--small btn--ghost" onClick={() => setEditing(true)}>

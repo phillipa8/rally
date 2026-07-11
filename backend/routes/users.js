@@ -43,6 +43,7 @@ function publicEvent(row) {
     endTime: row.endTime,
     location: row.location,
     ageRestriction: row.ageRestriction,
+    isPrivate: !!row.isPrivate,
     createdAt: row.createdAt,
     category: {
       id: row.categoryId,
@@ -248,7 +249,8 @@ router.get('/:username/events', optionalAuth, (req, res) => {
     .prepare(
       `SELECT e.id, e.title, e.description, e.location,
               e.start_time AS startTime, e.end_time AS endTime,
-              e.age_restriction AS ageRestriction, e.created_at AS createdAt,
+              e.age_restriction AS ageRestriction, e.is_private AS isPrivate,
+              e.created_at AS createdAt,
               c.id AS categoryId, c.slug AS categorySlug, c.name AS categoryName,
               u.id AS creatorId, u.username AS creatorUsername,
               u.display_name AS creatorDisplayName, u.avatar_url AS creatorAvatarUrl,

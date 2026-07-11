@@ -32,6 +32,7 @@ const createEventSchema = z
     endTime: z.string().trim().min(1, 'End time is required'),
     location: z.string().trim().max(200).optional(),
     ageRestriction: z.number().int().min(0).max(99).optional(),
+    isPrivate: z.boolean().optional(),
   })
   .refine((d) => d.endTime > d.startTime, {
     message: 'End time must be after start time',
@@ -54,6 +55,7 @@ const updateEventSchema = z
     endTime: z.string().trim().min(1).optional(),
     location: z.string().trim().max(200).optional(),
     ageRestriction: z.number().int().min(0).max(99).optional(),
+    isPrivate: z.boolean().optional(),
   })
   .refine((d) => Object.keys(d).length > 0, { message: 'No fields to update' })
   .refine((d) => d.startTime === undefined || d.endTime === undefined || d.endTime > d.startTime, {
@@ -75,6 +77,7 @@ function publicEvent(row) {
     endTime: row.end_time,
     location: row.location,
     ageRestriction: row.age_restriction,
+    isPrivate: !!row.is_private,
     createdAt: row.created_at,
     category: { id: row.category_id, slug: row.category_slug, name: row.category_name },
     creator: {
@@ -163,14 +166,17 @@ function notify(recipientId, actorId, type, eventId = null) {
 }
 
 // POST /api/events — create an event (the creator is the logged-in user).
+// Visibility defaults to the creator's account setting (issue #40): a private
+// account's new events start private unless the form says otherwise.
 router.post('/', requireAuth, validate(createEventSchema), (req, res) => {
-  const { title, description, categoryId, startTime, endTime, location, ageRestriction } = req.body;
+  const { title, description, categoryId, startTime, endTime, location, ageRestriction, isPrivate } = req.body;
+  const creator = db.prepare('SELECT is_private FROM users WHERE id = ?').get(req.userId);
   try {
     const info = db
       .prepare(
         `INSERT INTO events
-           (creator_id, title, description, category_id, start_time, end_time, location, age_restriction)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+           (creator_id, title, description, category_id, start_time, end_time, location, age_restriction, is_private)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         req.userId,
@@ -180,7 +186,8 @@ router.post('/', requireAuth, validate(createEventSchema), (req, res) => {
         startTime,
         endTime,
         location ?? null,
-        ageRestriction ?? 0
+        ageRestriction ?? 0,
+        (isPrivate ?? !!creator.is_private) ? 1 : 0
       );
     res.status(201).json({ event: publicEvent(findEventById(info.lastInsertRowid)) });
   } catch (err) {
@@ -211,8 +218,8 @@ router.get('/', optionalAuth, validateQuery(calendarQuerySchema), (req, res) => 
     if (/^\d+$/.test(category)) { clauses.push('e.category_id = ?'); params.push(Number(category)); }
     else { clauses.push('c.slug = ?'); params.push(category); }
   }
-  // Only show events whose creator is visible to the viewer (account visibility gate).
-  const v = visiblePostsWhere(req.userId, 'u');
+  // Only show events visible to the viewer (creator account gate + event privacy).
+  const v = visibleEventsWhere(req.userId, 'u', 'e');
   clauses.push(v.clause);
   params.push(...v.params);
   const where = `WHERE ${clauses.join(' AND ')}`;
@@ -237,6 +244,8 @@ router.get('/', optionalAuth, validateQuery(calendarQuerySchema), (req, res) => 
 // Registered before /:id so "me" is never treated as an event id.
 // (Kept here under /api/events to avoid colliding with Member A's /api/users routes.)
 router.get('/me/participating', requireAuth, (req, res) => {
+  // Visibility-gated too: losing access to a private creator hides their events here.
+  const v = visibleEventsWhere(req.userId, 'u', 'e');
   const rows = db
     .prepare(
       `SELECT e.*, c.slug AS category_slug, c.name AS category_name,
@@ -246,10 +255,10 @@ router.get('/me/participating', requireAuth, (req, res) => {
          JOIN events e ON e.id = ep.event_id
          JOIN categories c ON c.id = e.category_id
          JOIN users u ON u.id = e.creator_id
-        WHERE ep.user_id = ? AND ep.status != 'not_going'
+        WHERE ep.user_id = ? AND ep.status != 'not_going' AND ${v.clause}
         ORDER BY e.start_time ASC`
     )
-    .all(req.userId);
+    .all(req.userId, ...v.params);
   res.json({ events: rows.map((r) => ({ ...publicEvent(r), myStatus: r.my_status })) });
 });
 
@@ -267,7 +276,7 @@ router.get('/discover', optionalAuth, validateQuery(discoverQuerySchema), (req, 
   // ORDER BY is chosen from the validated enum (never interpolated user input).
   const order =
     sort === 'popular' ? 'participant_count DESC, e.start_time ASC' : 'e.start_time ASC';
-  const v = visiblePostsWhere(req.userId, 'u');
+  const v = visibleEventsWhere(req.userId, 'u', 'e');
   const rows = db
     .prepare(
       `SELECT e.*, c.slug AS category_slug, c.name AS category_name,
@@ -415,6 +424,11 @@ router.put('/:id', requireAuth, validate(updateEventSchema), (req, res) => {
       fields.push(`${col} = ?`);
       params.push(req.body[key]);
     }
+  }
+  // Boolean -> 0/1 explicitly; the generic map would bind `true` as-is.
+  if (req.body.isPrivate !== undefined) {
+    fields.push('is_private = ?');
+    params.push(req.body.isPrivate ? 1 : 0);
   }
 
   try {

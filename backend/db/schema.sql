@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS events (
   end_time        TEXT    NOT NULL,
   location        TEXT,
   age_restriction INTEGER NOT NULL DEFAULT 0 CHECK (age_restriction BETWEEN 0 AND 99),
+  is_private      INTEGER NOT NULL DEFAULT 0 CHECK (is_private IN (0,1)),
   created_at      TEXT    NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (creator_id)  REFERENCES users(id)      ON DELETE CASCADE,
   FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT,

@@ -5,12 +5,14 @@
 import { useState } from 'react';
 import { useMutation } from '../api/hooks';
 import apiClient from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import { toSqlUtc, toDatetimeLocal, nowDatetimeLocal } from '../lib/time';
 import CategorySelect from './CategorySelect';
 
 const MAX_TITLE = 120;
 
 export default function EventForm({ event = null, onSaved, onCancel }) {
+  const { user } = useAuth();
   const editing = !!event;
   const [title, setTitle] = useState(event?.title ?? '');
   const [description, setDescription] = useState(event?.description ?? '');
@@ -19,6 +21,8 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
   const [endTime, setEndTime] = useState(event ? toDatetimeLocal(event.endTime) : '');
   const [location, setLocation] = useState(event?.location ?? '');
   const [ageRestriction, setAgeRestriction] = useState(String(event?.ageRestriction ?? 0));
+  // New events default to the account's privacy setting (issue #40).
+  const [isPrivate, setIsPrivate] = useState(editing ? !!event.isPrivate : !!user?.isPrivate);
 
   const { mutate, loading, error } = useMutation((body) =>
     editing ? apiClient.put(`/events/${event.id}`, body) : apiClient.post('/events', body)
@@ -53,6 +57,7 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
       endTime: toSqlUtc(endTime),
       location: location.trim() || undefined,
       ageRestriction: Number(ageRestriction) || 0,
+      isPrivate,
     };
     const res = await mutate(body);
     onSaved?.(res.data.event);
@@ -126,6 +131,15 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
           value={ageRestriction}
           onChange={(e) => setAgeRestriction(e.target.value)}
         />
+      </label>
+
+      <label className="checkbox-row">
+        <input
+          type="checkbox"
+          checked={isPrivate}
+          onChange={(e) => setIsPrivate(e.target.checked)}
+        />
+        <span>🔒 Private event — only my accepted followers can see it</span>
       </label>
 
       <div className="event-form__actions">

@@ -10,6 +10,7 @@ export default function EventCard({ event, participantCount }) {
     <Link to={`/events/${event.id}`} className="card event-card">
       <div className="event-card__head">
         {event.category?.name && <span className="chip">{event.category.name}</span>}
+        {event.isPrivate && <span className="chip" title="Private event">🔒</span>}
         {typeof participantCount === 'number' && (
           <span className="muted event-card__count">{participantCount} going</span>
         )}

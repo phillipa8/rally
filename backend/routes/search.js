@@ -49,6 +49,7 @@ function eventFromRow(row) {
     startTime: row.startTime,
     endTime: row.endTime,
     ageRestriction: row.ageRestriction,
+    isPrivate: !!row.isPrivate,
     createdAt: row.createdAt,
     category: {
       id: row.categoryId,
@@ -107,7 +108,8 @@ function searchEventsFts(q, viewerId) {
     .prepare(
       `SELECT e.id, e.title, e.description, e.location,
               e.start_time AS startTime, e.end_time AS endTime,
-              e.age_restriction AS ageRestriction, e.created_at AS createdAt,
+              e.age_restriction AS ageRestriction, e.is_private AS isPrivate,
+              e.created_at AS createdAt,
               c.id AS categoryId, c.slug AS categorySlug, c.name AS categoryName,
               u.id AS creatorId, u.username AS creatorUsername, u.display_name AS creatorDisplayName,
               (SELECT COUNT(*) FROM event_participants ep
@@ -131,7 +133,8 @@ function searchEventsLike(q, viewerId) {
     .prepare(
       `SELECT e.id, e.title, e.description, e.location,
               e.start_time AS startTime, e.end_time AS endTime,
-              e.age_restriction AS ageRestriction, e.created_at AS createdAt,
+              e.age_restriction AS ageRestriction, e.is_private AS isPrivate,
+              e.created_at AS createdAt,
               c.id AS categoryId, c.slug AS categorySlug, c.name AS categoryName,
               u.id AS creatorId, u.username AS creatorUsername, u.display_name AS creatorDisplayName,
               (SELECT COUNT(*) FROM event_participants ep

@@ -42,6 +42,26 @@ export function visiblePostsWhere(viewerId, authorAlias = 'u') {
   };
 }
 
-export function visibleEventsWhere(viewerId, creatorAlias = 'u') {
-  return notBlockedWhere(viewerId, creatorAlias);
+// Which events can this viewer see. Two gates, both must pass:
+//   1. the creator's account is visible (same rules as visiblePostsWhere), AND
+//   2. the event itself is public, OR the viewer is the creator, OR the viewer
+//      is an ACCEPTED follower of the creator (private events are follower-only).
+// `eventAlias` is the SQL alias of the events row (default "e").
+export function visibleEventsWhere(viewerId, creatorAlias = 'u', eventAlias = 'e') {
+  if (viewerId == null) {
+    return {
+      clause: `(${creatorAlias}.is_private = 0 AND ${eventAlias}.is_private = 0)`,
+      params: [],
+    };
+  }
+  const account = visiblePostsWhere(viewerId, creatorAlias);
+  return {
+    clause:
+      `(${account.clause} ` +
+      `AND (${eventAlias}.is_private = 0 ` +
+      `OR ${creatorAlias}.id = ? ` +
+      `OR EXISTS (SELECT 1 FROM follows ef ` +
+      `WHERE ef.following_id = ${creatorAlias}.id AND ef.follower_id = ? AND ef.status = 'accepted')))`,
+    params: [...account.params, viewerId, viewerId],
+  };
 }
