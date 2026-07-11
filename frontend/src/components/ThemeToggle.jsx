@@ -10,7 +10,11 @@ export default function ThemeToggle() {
   const toggle = () => {
     const next = theme === 'dark' ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;
-    localStorage.setItem('rally-theme', next);
+    try {
+      localStorage.setItem('rally-theme', next);
+    } catch {
+      /* theme still applies for this session even if it cannot persist */
+    }
     setTheme(next);
   };
 

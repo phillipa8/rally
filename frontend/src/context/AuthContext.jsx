@@ -31,7 +31,13 @@ export function AuthProvider({ children }) {
     setAuthError(null);
     try {
       const res = await apiClient.get('/auth/me');
-      setUser(res.data.user ?? null);
+      // Keep the previous object when nothing changed so identity-keyed effects
+      // (e.g. the Settings form sync) don't refire on silent focus refreshes and
+      // wipe in-progress edits. Key order is stable (same serializer both times).
+      setUser((prev) => {
+        const next = res.data.user ?? null;
+        return JSON.stringify(prev) === JSON.stringify(next) ? prev : next;
+      });
     } catch (err) {
       setUser(null);
       // A 401/normal response means "logged out" (not an error). A missing response

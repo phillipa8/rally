@@ -12,7 +12,7 @@ import EmptyState from '../components/EmptyState';
 
 export default function PostDetailPage() {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { data, loading, error, refetch } = useApi(`/posts/${id}`, [id]);
   const [threadVersion, setThreadVersion] = useState(0);
 
@@ -21,7 +21,9 @@ export default function PostDetailPage() {
     setThreadVersion((v) => v + 1);
   }
 
-  if (loading) return <LoadingState label="Loading post…" />;
+  // Wait for the session probe too, so the replies-off gate below never flashes
+  // the "turned off" notice at the post's own author.
+  if (loading || authLoading) return <LoadingState label="Loading post…" />;
   if (error) return <ErrorState message={error} onRetry={refetch} />;
   if (!data?.post) return <EmptyState title="Post not found" />;
 

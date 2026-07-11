@@ -4,7 +4,12 @@ import './index.css'
 import App from './App.jsx'
 
 // Apply the saved (or OS-preferred) theme before first paint to avoid a flash.
-const storedTheme = localStorage.getItem('rally-theme')
+let storedTheme = null
+try {
+  storedTheme = localStorage.getItem('rally-theme')
+} catch {
+  /* storage can be unavailable (blocked site data / some private modes) */
+}
 document.documentElement.dataset.theme =
   storedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
 
